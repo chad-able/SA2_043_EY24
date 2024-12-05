@@ -30,7 +30,7 @@ def treatment_opex_modular(total_flow_rate):
     # generic, assumed 5 times higher than centralized costs, returns $/year
     return total_flow_rate*5*60*24*365/42
 
-def annualized_cost(t_capex,t_opex,trucking,ut,crf,total_flow_rate):
+def annualized_cost(t_capex,t_opex,trucking,ut=1,crf=0.0769,total_flow_rate):
     # returns $/bbl
     # ut = utilization, crf = capital recovery factor
     cost_annual = (crf*t_capex+t_opex+trucking)/(ut*total_flow_rate*60*24*365/42)
@@ -53,6 +53,28 @@ def cost_single_facility_any_central(lat, lon, model, index, num_sites, site_coo
 
     return capex, opex, trans_cost, total_flow_rate
 
+def cost_sites_modular(flow_rate):
+
+    capex = treatment_capex_modular(flow_rate)
+    opex = treatment_opex_modular(flow_rate)
+    trans_cost = 0 # placeholder
+
+    return capex, opex, trans_cost
+
+def annual_cost_modular(num_sites, flow_rate_data):
+    total_flow = 0
+    total_cap = 0
+    total_op = 0
+    total_truck = 0
+    for j in num_sites:
+        capex, opex, trans_cost = cost_sites_modular(flow_rate_data[j][0])
+        total_cap += capex
+        total_op += opex
+        total_truck += trans_cost
+        total_flow += flow_rate_data[j][0]
+
+    cost_annual = annualized_cost(total_cap, total_op, total_truck, 1, 0.0769, total_flow)
+    return cost_annual
 
 def cost_single_facility_site_central(model, index, num_sites, site_coordinates, flow_rate_data, h_approx):
     trans_cost = 0
