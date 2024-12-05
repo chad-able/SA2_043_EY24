@@ -27,7 +27,7 @@ num_facilities = 2
 # for i in range(len(huc8.columns)):
 #     print(huc8.columns[i])
 
-filename = "NEWTS_Well_Summary_by_Hydrologic_Regions_and_Subbasins.gdb"
+filename = ("E:/codes/RC24/PWMapping/NEWTS_Well_Summary_by_Hydrologic_Regions_and_Subbasins.gdb")
 
 gpd_args = {
     'layer': 1,
@@ -56,7 +56,7 @@ huc_data["2022_flow_gpm"].fillna(huc_data["2022_flow_gpm"].mean(), inplace=True)
 flow_rate_data = list(zip(huc_data["2022_flow_gpm"]))
 
 
-shale_filename = "SedimentaryBasins_US_EIA/Lower_48_Sedimentary_Basins.shp"
+shale_filename = "E:/codes/RC24/PWMapping/SedimentaryBasins_US_EIA/Lower_48_Sedimentary_Basins.shp"
 #huc_data = init_functions.shale_plays(huc_data, shale_filename)
 
 #print(huc_data["Shale_play"])
