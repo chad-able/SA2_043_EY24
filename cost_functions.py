@@ -13,11 +13,11 @@ def transportation_cost(dist,flow_rate):
     truck_cost_per_year = truck_hourly_rate*truck_time*truck_num
     return truck_cost_per_year
 
-def treatment_capex(total_flow_rate):
+def treatment_capex_central(total_flow_rate):
     # generic, assumed 1000 $/bbl/day from PARETO's treatment technology matrix, returns just $
     return total_flow_rate*1000*60*24/42
 
-def treatment_opex(total_flow_rate):
+def treatment_opex_central(total_flow_rate):
     # generic, assumed $1/bbl feed from PARETO's treatment technology matrix, returns $/year
     return total_flow_rate*1*60*24*365/42
 
@@ -28,7 +28,7 @@ def annualized_cost(t_capex,t_opex,trucking,ut,crf,total_flow_rate):
     return cost_annual
 
 
-def cost_single_facility_any(lat, lon, model, index, num_sites, site_coordinates, flow_rate_data, h_approx):
+def cost_single_facility_any_central(lat, lon, model, index, num_sites, site_coordinates, flow_rate_data, h_approx):
     trans_cost = 0
     total_flow_rate = 0
 
@@ -39,13 +39,13 @@ def cost_single_facility_any(lat, lon, model, index, num_sites, site_coordinates
         flow = x_ij * flow_rate_data[j][0]
         total_flow_rate += flow
 
-    capex = treatment_capex(total_flow_rate)
-    opex = treatment_opex(total_flow_rate)
+    capex = treatment_capex_central(total_flow_rate)
+    opex = treatment_opex_central(total_flow_rate)
 
     return capex, opex, trans_cost, total_flow_rate
 
 
-def cost_single_facility_site(model, index, num_sites, site_coordinates, flow_rate_data, h_approx):
+def cost_single_facility_site_central(model, index, num_sites, site_coordinates, flow_rate_data, h_approx):
     trans_cost = 0
     total_flow_rate = 0
     lat, lon = facility_coordinates(model, index, site_coordinates, num_sites)
@@ -58,8 +58,8 @@ def cost_single_facility_site(model, index, num_sites, site_coordinates, flow_ra
         flow = x_ij * flow_rate_data[j][0]
         total_flow_rate += flow
 
-    capex = treatment_capex(total_flow_rate)
-    opex = treatment_opex(total_flow_rate)
+    capex = treatment_capex_central(total_flow_rate)
+    opex = treatment_opex_central(total_flow_rate)
     #annual_cost = annualized_cost(capex, opex, trans_cost, 1, 0.0769, total_flow_rate)
     # print('annual cost is ', annual_cost)
 
@@ -70,12 +70,12 @@ def facility_obj_per_annual(model, num_sites, num_facilities, site_coordinates, 
     if not sites_flag:
         for i in range(num_facilities):
             # print('facility number ', i)
-            cost_fac = cost_single_facility_any(model.lat[i],model.lon[i], model, i, num_sites, site_coordinates, flow_rate_data, h_approx)
+            cost_fac = cost_single_facility_any_central(model.lat[i],model.lon[i], model, i, num_sites, site_coordinates, flow_rate_data, h_approx)
             total_cost += cost_fac
 
     else:
         for i in range(num_facilities):
-            cost_fac = cost_single_facility_site(model, i, num_sites, site_coordinates, flow_rate_data, h_approx)
+            cost_fac = cost_single_facility_site_central(model, i, num_sites, site_coordinates, flow_rate_data, h_approx)
             total_cost += cost_fac
 
     # print('total_cost is', total_cost)
@@ -89,7 +89,7 @@ def facility_obj(model, num_sites, num_facilities, site_coordinates, flow_rate_d
     if not sites_flag:
         for i in range(num_facilities):
             # print('facility number ', i)
-            capex, opex, trucking, flow_rate = cost_single_facility_any(model.lat[i],model.lon[i], model, i, num_sites, site_coordinates, flow_rate_data, h_approx)
+            capex, opex, trucking, flow_rate = cost_single_facility_any_central(model.lat[i],model.lon[i], model, i, num_sites, site_coordinates, flow_rate_data, h_approx)
             total_cap += capex
             total_op += opex
             total_truck += trucking
@@ -97,7 +97,7 @@ def facility_obj(model, num_sites, num_facilities, site_coordinates, flow_rate_d
 
     else:
         for i in range(num_facilities):
-            capex, opex, trucking, flow_rate = cost_single_facility_site(model, i, num_sites, site_coordinates, flow_rate_data, h_approx)
+            capex, opex, trucking, flow_rate = cost_single_facility_site_central(model, i, num_sites, site_coordinates, flow_rate_data, h_approx)
             total_cap += capex
             total_op += opex
             total_truck += trucking
