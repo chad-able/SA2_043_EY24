@@ -64,7 +64,7 @@ shale_filename = "E:/codes/RC24/PWMapping/SedimentaryBasins_US_EIA/Lower_48_Sedi
 # if sites_flag = True, use only sites as locations
 # Otherwise, use any valid location
 
-sites_flag = True
+sites_flag = False
 
 if not sites_flag:
     model = init_functions.model_init_any_location(lat_min, lat_max, lon_min, lon_max, num_facilities, num_sites)

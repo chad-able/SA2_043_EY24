@@ -7,7 +7,7 @@ def transportation_cost(dist,flow_rate):
     truck_capacity = 110*42 #initially in barrels, converted to gallons, from Pareto (p_delta_Truck in strategic_produced_water_optimization)
     truck_hourly_rate = 95 #$/hr, from Pareto, rates vary from 90 to 110
     truck_speed = 60*1609.34 # starts in mph, convert to meters per hour
-    truck_time = 6*modeling_functions.sigmoid_shifted(dist, 10, 1)+dist/truck_speed # assume 6 hour minimum trucking time for loading/unloading, include travel time
+    truck_time = 6*modeling_functions.sigmoid_shifted(dist, 30, 1)+dist/truck_speed # assume 6 hour minimum trucking time for loading/unloading, include travel time
     # truck_time = 6+dist/truck_speed
     truck_num = np.ceil(flow_rate/truck_capacity*60*24*365) # number of trucks required per year
     truck_cost_per_year = truck_hourly_rate*truck_time*truck_num
@@ -87,7 +87,7 @@ def cost_single_facility_site_central(model, index, num_sites, site_coordinates,
         z_ij = model.z[index, j]
         x_ij = model.x[index, j]
         # t_cost = x_ij * transportation_cost(haversine(lat, lon, site_coordinates[j][0], site_coordinates[j][1], h_approx), flow_rate_data[j][0])
-        t_cost = -1 * (z_ij - 1) * x_ij * transportation_cost(
+        t_cost = x_ij * transportation_cost(
             linear_distance(lat, lon, site_coordinates[j][0], site_coordinates[j][1]), flow_rate_data[j][0])
         trans_cost += t_cost
         flow = x_ij * flow_rate_data[j][0]
