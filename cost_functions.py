@@ -27,23 +27,6 @@ def annualized_cost(t_capex,t_opex,trucking,ut,crf,total_flow_rate):
     cost_annual = (crf*t_capex+t_opex+trucking)/(ut*total_flow_rate*60*24*365/42)
     return cost_annual
 
-def cost_single_facility_any_annual(lat, lon, model, index, num_sites, site_coordinates, flow_rate_data, h_approx):
-    trans_cost = 0
-    total_flow_rate = 0
-
-    for j in range(num_sites):
-        x_ij = model.x[index, j]
-        t_cost = x_ij * transportation_cost(haversine(lat, lon, site_coordinates[j][0], site_coordinates[j][1], h_approx), flow_rate_data[j][0])
-        trans_cost += t_cost
-        flow = x_ij * flow_rate_data[j][0]
-        total_flow_rate += flow
-
-    capex = treatment_capex(total_flow_rate)
-    opex = treatment_opex(total_flow_rate)
-    annual_cost = annualized_cost(capex, opex, trans_cost, 1, 0.0769, total_flow_rate)
-    # print('annual cost is ', annual_cost)
-
-    return annual_cost
 
 def cost_single_facility_any(lat, lon, model, index, num_sites, site_coordinates, flow_rate_data, h_approx):
     trans_cost = 0
@@ -61,27 +44,6 @@ def cost_single_facility_any(lat, lon, model, index, num_sites, site_coordinates
 
     return capex, opex, trans_cost, total_flow_rate
 
-def cost_single_facility_site_annual(model, index, num_sites, site_coordinates, flow_rate_data, h_approx):
-    trans_cost = 0
-    total_flow_rate = 0
-    lat, lon = facility_coordinates(model, index, site_coordinates, num_sites)
-
-    for j in range(num_sites):
-        z_ij = model.z[index, j]
-        x_ij = model.x[index, j]
-        # t_cost = - (z_ij - 1) * x_ij * transportation_cost(haversine(lat, lon, site_coordinates[j][0], site_coordinates[j][1], h_approx), flow_rate_data[j][0])
-        t_cost = x_ij * transportation_cost(
-            haversine(lat, lon, site_coordinates[j][0], site_coordinates[j][1], h_approx), flow_rate_data[j][0])
-        trans_cost += t_cost
-        flow = x_ij * flow_rate_data[j][0]
-        total_flow_rate += flow
-
-    capex = treatment_capex(total_flow_rate)
-    opex = treatment_opex(total_flow_rate)
-    annual_cost = annualized_cost(capex, opex, trans_cost, 1, 0.0769, total_flow_rate)
-    # print('annual cost is ', annual_cost)
-
-    return annual_cost
 
 def cost_single_facility_site(model, index, num_sites, site_coordinates, flow_rate_data, h_approx):
     trans_cost = 0
