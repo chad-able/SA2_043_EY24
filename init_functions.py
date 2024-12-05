@@ -28,10 +28,17 @@ def centroids(gpdf, proj_flag):
     gpdf['lon'] = centroids.x
     return gpdf
 
-def flow_rate(gpdf):
+def flow_rate(gpdf, remove_zeros = True, remove_nans = True):
 
     # built specifically for the well summary file
     gpdf["2022_flow_gpm"] = gpdf["F2022_WaterProd_BBL_sum_1"].apply(flow_rate_calc)
+
+    if remove_zeros:
+        gpdf = gpdf[(gpdf["2022_flow_gpm"] != 0)]
+
+    if remove_nans:
+        gpdf = gpdf[(gpdf["2022_flow_gpm"].notna())]
+
     return gpdf
 
 def flow_rate_calc(x):

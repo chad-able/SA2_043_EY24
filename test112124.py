@@ -31,7 +31,7 @@ filename = ("E:/codes/RC24/PWMapping/NEWTS_Well_Summary_by_Hydrologic_Regions_an
 
 gpd_args = {
     'layer': 1,
-    'rows': 50
+    'rows': 250
 }
 
 # initial data read
@@ -40,7 +40,7 @@ huc_data = init_functions.read_data(filename, **gpd_args)
 #addition of centroids to dataframe, proj_flag: 0 corresponds to EPSG:4326
 huc_data = init_functions.centroids(huc_data, 0)
 
-num_sites = len(huc_data)
+
 lat_max = huc_data['lat'].max()
 lat_min = huc_data['lat'].min()
 lon_max = huc_data['lon'].max()
@@ -54,8 +54,8 @@ huc_data = init_functions.flow_rate(huc_data)
 
 huc_data["2022_flow_gpm"].fillna(huc_data["2022_flow_gpm"].mean(), inplace=True)
 flow_rate_data = list(zip(huc_data["2022_flow_gpm"]))
-
-
+print(huc_data.head())
+num_sites = len(huc_data)
 shale_filename = "E:/codes/RC24/PWMapping/SedimentaryBasins_US_EIA/Lower_48_Sedimentary_Basins.shp"
 #huc_data = init_functions.shale_plays(huc_data, shale_filename)
 
@@ -64,7 +64,7 @@ shale_filename = "E:/codes/RC24/PWMapping/SedimentaryBasins_US_EIA/Lower_48_Sedi
 # if sites_flag = True, use only sites as locations
 # Otherwise, use any valid location
 
-sites_flag = False
+sites_flag = True
 
 if not sites_flag:
     model = init_functions.model_init_any_location(lat_min, lat_max, lon_min, lon_max, num_facilities, num_sites)
@@ -103,8 +103,8 @@ model.scaling_factor = pyo.Suffix(direction=pyo.Suffix.EXPORT)
 model.scaling_factor[model.objective] = modeling_functions.inverse_order_of_magnitude(testval)
 
 if not sites_flag:
-    model.scaling_factor[model.lat] = modeling_functions.inverse_order_of_magnitude(lat_max)*10
-    model.scaling_factor[model.lon] = modeling_functions.inverse_order_of_magnitude(lon_max)*10
+    model.scaling_factor[model.lat] = modeling_functions.inverse_order_of_magnitude(lat_max)
+    model.scaling_factor[model.lon] = modeling_functions.inverse_order_of_magnitude(lon_max)
 
 scaled_model = pyo.TransformationFactory('core.scale_model').create_using(model)
 
