@@ -20,7 +20,7 @@ from functools import partial
 
 
 num_facilities = 2
-#random_seed = 443
+random_seed = 443
 
 #random.seed(random_seed)
 # huc8 = pd.read_csv("huc8_summary.csv")
@@ -79,7 +79,7 @@ def objective_f(model):
     return cost_functions.facility_obj(model, num_sites, num_facilities, site_coordinates, flow_rate_data, h_approx, sites_flag)
 
 print(flow_rate_data[0][0])
-
+print("Modular cost is ", cost_functions.annual_cost_modular(num_sites, flow_rate_data))
 
 testval = pyo.value(objective_f(model))
 print("testval is", testval)

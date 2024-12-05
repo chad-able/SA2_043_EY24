@@ -30,7 +30,7 @@ def treatment_opex_modular(total_flow_rate):
     # generic, assumed 5 times higher than centralized costs, returns $/year
     return total_flow_rate*5*60*24*365/42
 
-def annualized_cost(t_capex,t_opex,trucking,ut=1,crf=0.0769,total_flow_rate):
+def annualized_cost(t_capex,t_opex,trucking,total_flow_rate,ut=1,crf=0.0769):
     # returns $/bbl
     # ut = utilization, crf = capital recovery factor
     cost_annual = (crf*t_capex+t_opex+trucking)/(ut*total_flow_rate*60*24*365/42)
@@ -66,14 +66,14 @@ def annual_cost_modular(num_sites, flow_rate_data):
     total_cap = 0
     total_op = 0
     total_truck = 0
-    for j in num_sites:
+    for j in range(num_sites):
         capex, opex, trans_cost = cost_sites_modular(flow_rate_data[j][0])
         total_cap += capex
         total_op += opex
         total_truck += trans_cost
         total_flow += flow_rate_data[j][0]
 
-    cost_annual = annualized_cost(total_cap, total_op, total_truck, 1, 0.0769, total_flow)
+    cost_annual = annualized_cost(total_cap, total_op, total_truck, total_flow, 1, 0.0769)
     return cost_annual
 
 def cost_single_facility_site_central(model, index, num_sites, site_coordinates, flow_rate_data, h_approx):
@@ -91,26 +91,9 @@ def cost_single_facility_site_central(model, index, num_sites, site_coordinates,
 
     capex = treatment_capex_central(total_flow_rate)
     opex = treatment_opex_central(total_flow_rate)
-    #annual_cost = annualized_cost(capex, opex, trans_cost, 1, 0.0769, total_flow_rate)
-    # print('annual cost is ', annual_cost)
 
     return capex, opex, trans_cost, total_flow_rate
 
-def facility_obj_per_annual(model, num_sites, num_facilities, site_coordinates, flow_rate_data, h_approx, sites_flag):
-    total_cost = 0
-    if not sites_flag:
-        for i in range(num_facilities):
-            # print('facility number ', i)
-            cost_fac = cost_single_facility_any_central(model.lat[i],model.lon[i], model, i, num_sites, site_coordinates, flow_rate_data, h_approx)
-            total_cost += cost_fac
-
-    else:
-        for i in range(num_facilities):
-            cost_fac = cost_single_facility_site_central(model, i, num_sites, site_coordinates, flow_rate_data, h_approx)
-            total_cost += cost_fac
-
-    # print('total_cost is', total_cost)
-    return total_cost
 
 def facility_obj(model, num_sites, num_facilities, site_coordinates, flow_rate_data, h_approx, sites_flag):
     total_cap = 0
@@ -135,7 +118,7 @@ def facility_obj(model, num_sites, num_facilities, site_coordinates, flow_rate_d
             total_flow += flow_rate
 
     # print('total_cost is', total_cost)
-    annual_cost = annualized_cost(total_cap, total_op, total_truck, 1, 0.0769, total_flow)
+    annual_cost = annualized_cost(total_cap, total_op, total_truck, total_flow, 1, 0.0769)
     return annual_cost
 
 def transportation_cost_total(model):
