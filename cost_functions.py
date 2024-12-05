@@ -1,5 +1,5 @@
 import numpy as np
-from distance_functions import haversine, linear_distance
+from distance_functions import haversine, linear_distance, euclidean_distance
 import modeling_functions
 
 def transportation_cost(dist,flow_rate):
@@ -45,7 +45,7 @@ def cost_single_facility_any_central(lat, lon, model, index, num_sites, site_coo
         x_ij = model.x[index, j]
         # t_cost = x_ij * transportation_cost(haversine(lat, lon, site_coordinates[j][0], site_coordinates[j][1], h_approx), flow_rate_data[j][0])
         t_cost = x_ij * transportation_cost(
-            linear_distance(lat, lon, site_coordinates[j][0], site_coordinates[j][1]), flow_rate_data[j][0])
+            euclidean_distance(lat, lon, site_coordinates[j][0], site_coordinates[j][1]), flow_rate_data[j][0])
         trans_cost += t_cost
         flow = x_ij * flow_rate_data[j][0]
         total_flow_rate += flow
@@ -88,7 +88,7 @@ def cost_single_facility_site_central(model, index, num_sites, site_coordinates,
         x_ij = model.x[index, j]
         # t_cost = x_ij * transportation_cost(haversine(lat, lon, site_coordinates[j][0], site_coordinates[j][1], h_approx), flow_rate_data[j][0])
         t_cost = x_ij * transportation_cost(
-            linear_distance(lat, lon, site_coordinates[j][0], site_coordinates[j][1]), flow_rate_data[j][0])
+            euclidean_distance(lat, lon, site_coordinates[j][0], site_coordinates[j][1]), flow_rate_data[j][0])
         trans_cost += t_cost
         flow = x_ij * flow_rate_data[j][0]
         total_flow_rate += flow

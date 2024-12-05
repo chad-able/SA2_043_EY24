@@ -41,3 +41,6 @@ def haversine(lat1, lon1, lat2, lon2, approx):
 
 def linear_distance(lat1, lon1, lat2, lon2):
     return abs(lat1 - lat2) + abs(lon1 - lon2)
+
+def euclidean_distance(lat1, lon1, lat2, lon2):
+    return pyo.sqrt((lat1-lat2)**2+(lon1-lon2)**2)
