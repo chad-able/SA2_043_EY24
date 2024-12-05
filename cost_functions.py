@@ -17,9 +17,18 @@ def treatment_capex_central(total_flow_rate):
     # generic, assumed 1000 $/bbl/day from PARETO's treatment technology matrix, returns just $
     return total_flow_rate*1000*60*24/42
 
+def treatment_capex_modular(total_flow_rate):
+    # generic, assumed 3 times higher than centralized costs, returns just $
+    return total_flow_rate*3*1000*60*24/42
+
+
 def treatment_opex_central(total_flow_rate):
     # generic, assumed $1/bbl feed from PARETO's treatment technology matrix, returns $/year
     return total_flow_rate*1*60*24*365/42
+
+def treatment_opex_modular(total_flow_rate):
+    # generic, assumed 5 times higher than centralized costs, returns $/year
+    return total_flow_rate*5*60*24*365/42
 
 def annualized_cost(t_capex,t_opex,trucking,ut,crf,total_flow_rate):
     # returns $/bbl
