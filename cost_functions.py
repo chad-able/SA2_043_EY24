@@ -3,15 +3,38 @@ from distance_functions import haversine, linear_distance, euclidean_distance
 import modeling_functions
 
 def transportation_cost(dist,flow_rate):
-    #assume constant trucking, 60 mph
-    truck_capacity = 110*42 #initially in barrels, converted to gallons, from Pareto (p_delta_Truck in strategic_produced_water_optimization)
-    truck_hourly_rate = 95 #$/hr, from Pareto, rates vary from 90 to 110
-    truck_speed = 60*1609.34 # starts in mph, convert to meters per hour
-    truck_time = 6*modeling_functions.sigmoid_shifted(dist, 30, 1)+dist/truck_speed # assume 6 hour minimum trucking time for loading/unloading, include travel time
-    # truck_time = 6+dist/truck_speed
-    truck_num = np.ceil(flow_rate/truck_capacity*60*24*365) # number of trucks required per year
+    # assume constant trucking, 60 mph
+    # initially in barrels, converted to gallons, from Pareto (p_delta_Truck in strategic_produced_water_optimization, 110 from build_utils)
+    truck_capacity = 110*42
+    # $/hr, from Pareto, rates vary from 90 to 110 (strategic_toy_case_study, tab TruckingHourlyCost)
+    truck_hourly_rate = 95
+    # starts in mph, convert to meters per hour
+    truck_speed = 60*1609.34
+    # assume 6 hour minimum trucking time for loading/unloading, include travel time
+    # sigmoid function used to bring truck_time to 0 at distance = 0
+    truck_time = 6*modeling_functions.sigmoid_shifted(dist, 30, 1)+dist/truck_speed
+    # number of trucks required per year
+    truck_num = np.ceil(flow_rate/truck_capacity*60*24*365)
     truck_cost_per_year = truck_hourly_rate*truck_time*truck_num
     return truck_cost_per_year
+
+def transportation_cost_solids(dist,flow_rate,density,concentration):
+    # density in kg/m3
+    # concentration in mg/L
+
+    # mass of solute, in milligrams per minute
+    mass_solute = concentration * flow_rate * 3.78541
+
+    # volume of solute in gallons per minute
+    vol_solute = mass_solute / 1000000 / density * 264.172
+
+    # compute based on transporting equivalent volume of liquid
+    trans_cost = transportation_cost(dist, vol_solute)
+
+    return trans_cost
+
+
+
 
 def treatment_capex_central(total_flow_rate):
     # generic, assumed 1000 $/bbl/day from PARETO's treatment technology matrix, returns just $
@@ -55,13 +78,21 @@ def cost_single_facility_any_central(lat, lon, model, index, num_sites, site_coo
 
     return capex, opex, trans_cost, total_flow_rate
 
-def cost_sites_modular(flow_rate):
-
+def cost_sites_modular(lat, lon, model, index, num_sites, site_coordinates, flow_rate_data, h_approx, density, concentration):
+    trans_cost = 0
+    total_flow_rate = 0
+    for j in range(num_sites):
+        x_ij = model.x[index, j]
+        # t_cost = x_ij * transportation_cost(haversine(lat, lon, site_coordinates[j][0], site_coordinates[j][1], h_approx), flow_rate_data[j][0])
+        t_cost = x_ij * transportation_cost_solids(
+            euclidean_distance(lat, lon, site_coordinates[j][0], site_coordinates[j][1]), flow_rate_data[j][0], density, concentration)
+        trans_cost += t_cost
+        flow = x_ij * flow_rate_data[j][0]
+        total_flow_rate += flow
     capex = treatment_capex_modular(flow_rate)
     opex = treatment_opex_modular(flow_rate)
-    trans_cost = 0 # placeholder
 
-    return capex, opex, trans_cost
+    return capex, opex, trans_cost, total_flow_rate
 
 def annual_cost_modular(num_sites, flow_rate_data):
     total_flow = 0
