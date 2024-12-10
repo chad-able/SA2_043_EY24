@@ -40,6 +40,14 @@ def treatment_capex_central(total_flow_rate):
     # generic, assumed 1000 $/bbl/day from PARETO's treatment technology matrix, returns just $
     return total_flow_rate*1000*60*24/42
 
+def treatment_capex_central_scaled(total_flow_rate):
+    # base capacity of the central plant is most commonly 5079 bbl/day from PARETO's treatment technology matrix
+    # attempts to scale costs vs. this base capacity
+
+    initial_cost = treatment_capex_central(total_flow_rate)
+    scaled_cost = initial_cost*((total_flow_rate*60*24/42)/5079)**0.6
+    return scaled_cost
+
 def treatment_capex_modular(total_flow_rate):
     # generic, assumed 3 times higher than centralized costs, returns just $
     return total_flow_rate*3*1000*60*24/42
@@ -48,6 +56,14 @@ def treatment_capex_modular(total_flow_rate):
 def treatment_opex_central(total_flow_rate):
     # generic, assumed $1/bbl feed from PARETO's treatment technology matrix, returns $/year
     return total_flow_rate*1*60*24*365/42
+
+def treatment_opex_central_scaled(total_flow_rate):
+    # base capacity of the central plant is most commonly 5079 bbl/day from PARETO's treatment technology matrix
+    # attempts to scale costs vs. this base capacity
+
+    initial_cost = treatment_opex_central(total_flow_rate)
+    scaled_cost = initial_cost*((total_flow_rate*60*24/42)/5079)**0.6
+    return scaled_cost
 
 def treatment_opex_modular(total_flow_rate):
     # generic, assumed 5 times higher than centralized costs, returns $/year
@@ -73,8 +89,8 @@ def cost_single_facility_any_central(lat, lon, model, index, num_sites, site_coo
         flow = x_ij * flow_rate_data[j][0]
         total_flow_rate += flow
 
-    capex = treatment_capex_central(total_flow_rate)
-    opex = treatment_opex_central(total_flow_rate)
+    capex = treatment_capex_central_scaled(total_flow_rate)
+    opex = treatment_opex_central_scaled(total_flow_rate)
 
     return capex, opex, trans_cost, total_flow_rate
 
@@ -124,8 +140,8 @@ def cost_single_facility_site_central(model, index, num_sites, site_coordinates,
         flow = x_ij * flow_rate_data[j][0]
         total_flow_rate += flow
 
-    capex = treatment_capex_central(total_flow_rate)
-    opex = treatment_opex_central(total_flow_rate)
+    capex = treatment_capex_central_scaled(total_flow_rate)
+    opex = treatment_opex_central_scaled(total_flow_rate)
 
     return capex, opex, trans_cost, total_flow_rate
 
