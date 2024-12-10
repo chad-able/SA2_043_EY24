@@ -66,6 +66,7 @@ shale_filename = "E:/codes/RC24/PWMapping/SedimentaryBasins_US_EIA/Lower_48_Sedi
 
 
 sites_flag = False
+mod_flag = True
 
 if not sites_flag:
     model = init_functions.model_init_any_location(lat_min, lat_max, lon_min, lon_max, num_facilities, num_sites)
@@ -77,7 +78,7 @@ else:
 
 
 def objective_f(model):
-    return cost_functions.facility_obj(model, num_sites, num_facilities, site_coordinates, flow_rate_data, h_approx, sites_flag)
+    return cost_functions.facility_obj(model, num_sites, num_facilities, site_coordinates, flow_rate_data, h_approx, sites_flag, mod_flag)
 
 print(flow_rate_data[0][0])
 # print("Modular cost is ", cost_functions.annual_cost_modular(num_sites, flow_rate_data))
@@ -159,7 +160,7 @@ result = solver.solve(scaled_model, tee=True, options={
 #     'bonmin.node_limit': 300,
 # })
 
-result = solver.solve(scaled_model, tee=True)
+# result = solver.solve(scaled_model, tee=True)
 
 
 modeling_functions.log_pyomo_infeasible_constraints(scaled_model)

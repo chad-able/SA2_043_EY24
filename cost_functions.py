@@ -105,8 +105,8 @@ def cost_sites_modular(lat, lon, model, index, num_sites, site_coordinates, flow
         trans_cost += t_cost
         flow = x_ij * flow_rate_data[j][0]
         total_flow_rate += flow
-    capex = treatment_capex_modular(flow_rate)
-    opex = treatment_opex_modular(flow_rate)
+    capex = treatment_capex_modular(total_flow_rate)
+    opex = treatment_opex_modular(total_flow_rate)
 
     return capex, opex, trans_cost, total_flow_rate
 
@@ -146,27 +146,35 @@ def cost_single_facility_site_central(model, index, num_sites, site_coordinates,
     return capex, opex, trans_cost, total_flow_rate
 
 
-def facility_obj(model, num_sites, num_facilities, site_coordinates, flow_rate_data, h_approx, sites_flag):
+def facility_obj(model, num_sites, num_facilities, site_coordinates, flow_rate_data, h_approx, sites_flag, mod_flag, density = 534, concentration = 10):
     total_cap = 0
     total_op = 0
     total_truck = 0
     total_flow = 0
-    if not sites_flag:
+    if mod_flag:
         for i in range(num_facilities):
-            # print('facility number ', i)
-            capex, opex, trucking, flow_rate = cost_single_facility_any_central(model.lat[i],model.lon[i], model, i, num_sites, site_coordinates, flow_rate_data, h_approx)
+            capex, opex, trucking, flow_rate = cost_sites_modular(model.lat[i],model.lon[i], model, i, num_sites, site_coordinates, flow_rate_data, h_approx, density, concentration)
             total_cap += capex
             total_op += opex
             total_truck += trucking
             total_flow += flow_rate
-
     else:
-        for i in range(num_facilities):
-            capex, opex, trucking, flow_rate = cost_single_facility_site_central(model, i, num_sites, site_coordinates, flow_rate_data, h_approx)
-            total_cap += capex
-            total_op += opex
-            total_truck += trucking
-            total_flow += flow_rate
+        if not sites_flag:
+            for i in range(num_facilities):
+                # print('facility number ', i)
+                capex, opex, trucking, flow_rate = cost_single_facility_any_central(model.lat[i],model.lon[i], model, i, num_sites, site_coordinates, flow_rate_data, h_approx)
+                total_cap += capex
+                total_op += opex
+                total_truck += trucking
+                total_flow += flow_rate
+
+        else:
+            for i in range(num_facilities):
+                capex, opex, trucking, flow_rate = cost_single_facility_site_central(model, i, num_sites, site_coordinates, flow_rate_data, h_approx)
+                total_cap += capex
+                total_op += opex
+                total_truck += trucking
+                total_flow += flow_rate
 
     # print('total_cost is', total_cost)
     annual_cost = annualized_cost(total_cap, total_op, total_truck, total_flow, 1, 0.0769)
