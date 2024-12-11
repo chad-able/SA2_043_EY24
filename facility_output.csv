@@ -1,48 +1,59 @@
-I,n,i,t,i,a,l, ,v,a,l,u,e, ,f,o,r, ,a,n,n,u,a,l,i,z,e,d, ,c,o,s,t,:, ,5,.,6,4,4,2,8,5,9,7,3,1,0,7,2,9,1, ,$,/,b,b,l
-Initial lat[0],5.416202300862047
-Initial lon[0],74.02647335452755
-Initial lat[1],9.128714583304507
-Initial lon[1],-171.72985142090403
+Initial value for annualized cost: 5.710916742127449 $/bbl
+Facility 0:,"Location (11.318631094870206, 128.52011749911483)"
+Facility 1:,"Location (2.2691728984225144, 98.53182855043232)"
 
-Facility 0:,"Location (34.535258219667696, -118.77015228492917)"
-D,r,a,w,s, ,f,r,o,m, ,s,i,t,e, ,3, ,w,i,t,h, ,f,l,o,w, ,r,a,t,e, ,0,.,5,6,5,6,0,2,8,4,8,4,4,5,3,1,4,2
-D,r,a,w,s, ,f,r,o,m, ,s,i,t,e, ,5, ,w,i,t,h, ,f,l,o,w, ,r,a,t,e, ,2,.,0,5,5,8,2,0,7,1,5,0,9,0,0,1,7,8,e,-,0,5
-D,r,a,w,s, ,f,r,o,m, ,s,i,t,e, ,6, ,w,i,t,h, ,f,l,o,w, ,r,a,t,e, ,0,.,2,2,9,5,5,6,0,6,2,9,1,2,2,2,7,3
-D,r,a,w,s, ,f,r,o,m, ,s,i,t,e, ,7, ,w,i,t,h, ,f,l,o,w, ,r,a,t,e, ,6,.,2,8,3,0,6,8,7,8,3,0,6,8,7,8,3,e,-,0,5
-D,r,a,w,s, ,f,r,o,m, ,s,i,t,e, ,8, ,w,i,t,h, ,f,l,o,w, ,r,a,t,e, ,0,.,0,1,2,2,5,9,4,1,3,2,7,8,2,4,8,8,9,5
-D,r,a,w,s, ,f,r,o,m, ,s,i,t,e, ,1,1, ,w,i,t,h, ,f,l,o,w, ,r,a,t,e, ,0,.,0,0,6,9,9,7,8,9,8,0,9,3,7,8,8,5,0,4,5
-D,r,a,w,s, ,f,r,o,m, ,s,i,t,e, ,1,5, ,w,i,t,h, ,f,l,o,w, ,r,a,t,e, ,0,.,9,9,2,3,5,1,0,5,4,5,7,7,0,8,2
-D,r,a,w,s, ,f,r,o,m, ,s,i,t,e, ,3,7, ,w,i,t,h, ,f,l,o,w, ,r,a,t,e, ,0,.,0,7,4,3,9,6,7,8,9,1,5,7,0,6,3,1,2
-D,r,a,w,s, ,f,r,o,m, ,s,i,t,e, ,3,8, ,w,i,t,h, ,f,l,o,w, ,r,a,t,e, ,0,.,0,0,3,8,5,2,4,2,2,6,2,8,1,0,7,5,5,9,3
-D,r,a,w,s, ,f,r,o,m, ,s,i,t,e, ,4,1, ,w,i,t,h, ,f,l,o,w, ,r,a,t,e, ,0,.,0,0,8,4,7,2,8,5,6,4,1,8,0,6,1,8,9,7
-D,r,a,w,s, ,f,r,o,m, ,s,i,t,e, ,4,2, ,w,i,t,h, ,f,l,o,w, ,r,a,t,e, ,0,.,0,0,6,6,2,8,3,4,3,1,1,8,0,6,9,1,4,5
-D,r,a,w,s, ,f,r,o,m, ,s,i,t,e, ,4,3, ,w,i,t,h, ,f,l,o,w, ,r,a,t,e, ,0,.,0,0,0,6,3,0,0,7,3,5,6,6,7,1,7,4,0,2,4
-D,r,a,w,s, ,f,r,o,m, ,s,i,t,e, ,5,1, ,w,i,t,h, ,f,l,o,w, ,r,a,t,e, ,0,.,0,1,9,5,4,8,5,8,8,4,6,1,2,5,9,6,9,2
-Facility 1:,"Location (46.16785363534761, -88.62227727378729)"
-D,r,a,w,s, ,f,r,o,m, ,s,i,t,e, ,2, ,w,i,t,h, ,f,l,o,w, ,r,a,t,e, ,1,0,.,1,7,1,4,8,5,6,9,4,3,5,3,8,4,4
-D,r,a,w,s, ,f,r,o,m, ,s,i,t,e, ,4, ,w,i,t,h, ,f,l,o,w, ,r,a,t,e, ,0,.,2,8,4,0,5,6,7,2,4,2,8,7,8,8,8,6,4
-D,r,a,w,s, ,f,r,o,m, ,s,i,t,e, ,9, ,w,i,t,h, ,f,l,o,w, ,r,a,t,e, ,0,.,0,3,0,6,5,5,8,9,4,3,9,7,3,3,2,7,5,6
-D,r,a,w,s, ,f,r,o,m, ,s,i,t,e, ,1,0, ,w,i,t,h, ,f,l,o,w, ,r,a,t,e, ,0,.,0,3,1,0,1,1,4,5,1,7,6,4,8,7,6,4,2,5
-D,r,a,w,s, ,f,r,o,m, ,s,i,t,e, ,1,3, ,w,i,t,h, ,f,l,o,w, ,r,a,t,e, ,1,.,2,6,8,3,9,1,6,7,9,3,5,0,5,8,3,5,e,-,0,6
-D,r,a,w,s, ,f,r,o,m, ,s,i,t,e, ,1,4, ,w,i,t,h, ,f,l,o,w, ,r,a,t,e, ,0,.,0,3,5,3,4,9,3,5,1,3,0,8,2,5,5,4,2
-D,r,a,w,s, ,f,r,o,m, ,s,i,t,e, ,1,6, ,w,i,t,h, ,f,l,o,w, ,r,a,t,e, ,0,.,0,4,6,1,7,5,2,1,0,1,9,0,6,2,1,1,5
-D,r,a,w,s, ,f,r,o,m, ,s,i,t,e, ,1,8, ,w,i,t,h, ,f,l,o,w, ,r,a,t,e, ,0,.,0,0,9,4,0,9,8,8,0,7,7,1,1,8,2,1,4,1
-D,r,a,w,s, ,f,r,o,m, ,s,i,t,e, ,1,9, ,w,i,t,h, ,f,l,o,w, ,r,a,t,e, ,0,.,0,0,0,3,7,9,4,7,5,6,1,0,6,3,9,9,9,4,2
-D,r,a,w,s, ,f,r,o,m, ,s,i,t,e, ,2,0, ,w,i,t,h, ,f,l,o,w, ,r,a,t,e, ,0,.,3,4,3,7,5,0,9,9,6,5,9,3,4,6,2,3
-D,r,a,w,s, ,f,r,o,m, ,s,i,t,e, ,2,1, ,w,i,t,h, ,f,l,o,w, ,r,a,t,e, ,4,.,9,5,1,2,5,7,5,1,9,7,5,0,6,7,1,e,-,0,5
-D,r,a,w,s, ,f,r,o,m, ,s,i,t,e, ,2,2, ,w,i,t,h, ,f,l,o,w, ,r,a,t,e, ,0,.,2,6,4,7,4,3,5,5,8,3,8,2,2,5,7
-D,r,a,w,s, ,f,r,o,m, ,s,i,t,e, ,2,4, ,w,i,t,h, ,f,l,o,w, ,r,a,t,e, ,0,.,0,9,8,4,5,1,9,7,3,2,5,5,0,5,5,4,6
-D,r,a,w,s, ,f,r,o,m, ,s,i,t,e, ,2,5, ,w,i,t,h, ,f,l,o,w, ,r,a,t,e, ,0,.,2,9,6,0,5,2,3,5,7,3,9,6,5,3,5,4,6
-D,r,a,w,s, ,f,r,o,m, ,s,i,t,e, ,2,6, ,w,i,t,h, ,f,l,o,w, ,r,a,t,e, ,0,.,2,6,6,6,5,8,6,4,8,6,1,9,2,6,5
-D,r,a,w,s, ,f,r,o,m, ,s,i,t,e, ,2,9, ,w,i,t,h, ,f,l,o,w, ,r,a,t,e, ,0,.,0,0,2,8,9,3,7,4,5,0,1,7,0,3,2,6,8,8,3
-D,r,a,w,s, ,f,r,o,m, ,s,i,t,e, ,3,1, ,w,i,t,h, ,f,l,o,w, ,r,a,t,e, ,3,.,9,3,6,5,4,4,1,7,6,2,7,0,2,0,3,5,e,-,0,5
-D,r,a,w,s, ,f,r,o,m, ,s,i,t,e, ,3,2, ,w,i,t,h, ,f,l,o,w, ,r,a,t,e, ,0,.,1,1,4,5,2,9,8,3,4,3,8,4,2,8,6,4,2
-D,r,a,w,s, ,f,r,o,m, ,s,i,t,e, ,3,5, ,w,i,t,h, ,f,l,o,w, ,r,a,t,e, ,0,.,0,3,0,6,7,7,6,3,8,2,5,4,6,9,3,0,5
-D,r,a,w,s, ,f,r,o,m, ,s,i,t,e, ,3,6, ,w,i,t,h, ,f,l,o,w, ,r,a,t,e, ,0,.,5,5,2,9,1,0,9,1,3,6,0,4,4,0,6,7
-D,r,a,w,s, ,f,r,o,m, ,s,i,t,e, ,3,9, ,w,i,t,h, ,f,l,o,w, ,r,a,t,e, ,0,.,0,4,9,9,9,7,2,3,6,7,1,8,1,2,7,1,3
-D,r,a,w,s, ,f,r,o,m, ,s,i,t,e, ,4,0, ,w,i,t,h, ,f,l,o,w, ,r,a,t,e, ,0,.,0,1,0,9,8,6,7,5,8,4,2,2,0,8,5,9,7,7
-D,r,a,w,s, ,f,r,o,m, ,s,i,t,e, ,4,4, ,w,i,t,h, ,f,l,o,w, ,r,a,t,e, ,0,.,0,0,1,1,2,3,4,7,7,9,2,9,9,8,4,7,7,9,4
-D,r,a,w,s, ,f,r,o,m, ,s,i,t,e, ,4,6, ,w,i,t,h, ,f,l,o,w, ,r,a,t,e, ,0,.,0,0,2,0,5,0,3,5,5,1,4,9,6,7,0,2,1,8,3
-D,r,a,w,s, ,f,r,o,m, ,s,i,t,e, ,4,7, ,w,i,t,h, ,f,l,o,w, ,r,a,t,e, ,0,.,0,2,2,4,6,6,0,7,0,5,2,2,5,7,7,3,7
-D,r,a,w,s, ,f,r,o,m, ,s,i,t,e, ,4,8, ,w,i,t,h, ,f,l,o,w, ,r,a,t,e, ,0,.,0,6,2,0,0,1,5,2,2,0,7,0,0,1,5,2,2,6
-D,r,a,w,s, ,f,r,o,m, ,s,i,t,e, ,4,9, ,w,i,t,h, ,f,l,o,w, ,r,a,t,e, ,0,.,1,8,3,7,5,8,4,2,5,7,4,4,7,2,7,1,4
+Final value for annualized cost is 3.1054408621094693 $/bbl
+Facility 0:,"Location (46.16439309748562, -88.62716748098065)"
+Draws from site 0 with flow rate 0.10230265781717258
+Draws from site 2 with flow rate 10.171485694353844
+Draws from site 3 with flow rate 0.5656028484453142
+Draws from site 8 with flow rate 0.012259413278248895
+Draws from site 9 with flow rate 0.030655894397332756
+Draws from site 10 with flow rate 0.031011451764876425
+Draws from site 11 with flow rate 0.0069978980937885045
+Draws from site 14 with flow rate 0.03534935130825542
+Draws from site 15 with flow rate 0.992351054577082
+Draws from site 16 with flow rate 0.04617521019062115
+Draws from site 21 with flow rate 4.951257519750671e-05
+Draws from site 26 with flow rate 0.266658648619265
+Draws from site 27 with flow rate 0.2167766996448503
+Draws from site 29 with flow rate 0.0028937450170326883
+Draws from site 30 with flow rate 0.13976407914764077
+Draws from site 34 with flow rate 0.18805193157932884
+Draws from site 35 with flow rate 0.03067763825469305
+Draws from site 37 with flow rate 0.07439678915706312
+Draws from site 39 with flow rate 0.04999723671812713
+Draws from site 41 with flow rate 0.008472856418061897
+Draws from site 42 with flow rate 0.006628343118069145
+Draws from site 45 with flow rate 0.056244374152409495
+Draws from site 47 with flow rate 0.02246607052257737
+Draws from site 48 with flow rate 0.062001522070015226
+Draws from site 50 with flow rate 0.13965345727332026
+Draws from site 51 with flow rate 0.019548588461259692
+Facility 1:,"Location (34.544277044580305, -118.73535854333367)"
+Draws from site 1 with flow rate 9.68960643618178e-05
+Draws from site 4 with flow rate 0.28405672428788864
+Draws from site 5 with flow rate 2.0558207150900178e-05
+Draws from site 6 with flow rate 0.2295560629122273
+Draws from site 7 with flow rate 6.283068783068783e-05
+Draws from site 12 with flow rate 0.001354551714140755
+Draws from site 13 with flow rate 1.2683916793505835e-06
+Draws from site 17 with flow rate 0.002442741175617888
+Draws from site 18 with flow rate 0.009409880771182141
+Draws from site 19 with flow rate 0.0003794756106399942
+Draws from site 20 with flow rate 0.3437509965934623
+Draws from site 22 with flow rate 0.264743558382257
+Draws from site 23 with flow rate 4.941063048126405
+Draws from site 24 with flow rate 0.09845197325505546
+Draws from site 25 with flow rate 0.29605235739653546
+Draws from site 28 with flow rate 0.1688709955062695
+Draws from site 31 with flow rate 3.9365441762702035e-05
+Draws from site 32 with flow rate 0.11452983438428642
+Draws from site 33 with flow rate 1.0898115985359138
+Draws from site 36 with flow rate 0.5529109136044067
+Draws from site 38 with flow rate 0.0038524226281075593
+Draws from site 40 with flow rate 0.010986758422085977
+Draws from site 43 with flow rate 0.0006300735667174024
+Draws from site 44 with flow rate 0.0011234779299847794
+Draws from site 46 with flow rate 0.0020503551496702183
+Draws from site 49 with flow rate 0.18375842574472714

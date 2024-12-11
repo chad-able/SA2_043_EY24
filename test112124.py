@@ -16,6 +16,7 @@ import cost_functions
 import modeling_functions
 from functools import partial
 import csv
+import print_functions
 
 
 
@@ -83,35 +84,9 @@ def objective_f(model):
 
 print(flow_rate_data[0][0])
 # print("Modular cost is ", cost_functions.annual_cost_modular(num_sites, flow_rate_data))
-print_array = []
 testval = pyo.value(objective_f(model))
-print(f"testval is {testval}")
-col = []
-col.append(f"Initial value for annualized cost: {testval} $/bbl")
-print_array.append(col)
+print_array = print_functions.print_initial(testval, model, num_facilities, num_sites, site_coordinates, sites_flag)
 
-if not sites_flag:
-    for i in range(num_facilities):
-        col = []
-        col.append(f"Facility {i}:")
-        col.append(f"Location ({model.lat[i].value}, {model.lon[i].value})")
-        print_array.append(col)
-        print(f"Initial lat[{i}] = {model.lat[i].value}, lon[{i}] = {model.lon[i].value}")
-
-else:
-    for i in range(num_facilities):
-        lat, lon = cost_functions.facility_coordinates_vals(model, i, site_coordinates, num_sites)
-        col = []
-        col.append(f"Facility {i}:")
-        col.append(f"Location ({lat}, {lon})")
-        print_array.append(col)
-        print(f"Initial lat[{i}] = {lat}, lon[{i}] = {lon}")
-        for j in range(num_sites):
-            if model.z[i, j].value == 1:
-                col = []
-                col.append(f"Facility {i} is initially assigned to Site {j}")
-                print_array.append(col)
-                print(f"Facility {i} is assigned to Site {j}")
 
 model.objective = pyo.Objective(rule=objective_f, sense=pyo.minimize)
 #model.pprint()
@@ -185,45 +160,10 @@ pyo.TransformationFactory('core.scale_model').propagate_solution(scaled_model, m
 #result = solver.solve(model, mip_solver = 'cbc', nlp_solver = 'ipopt', tee=True, mip_solver_tee=True, nlp_solver_tee=True)
 #
 
-print_array.append("")
-#print(result)
 newval = pyo.value(objective_f(model))
-print("newval is", newval)
-col = []
-col.append(f"Final value for annualized cost is {newval} $/bbl")
-print_array.append(col)
+finalprint = print_functions.print_final(print_array, newval, model, num_facilities, num_sites, site_coordinates, flow_rate_data, sites_flag)
 
-for i in range(num_facilities):
-    if not sites_flag:
-        col = []
-        col.append(f"Facility {i}:")
-        col.append(f"Location ({model.lat[i].value}, {model.lon[i].value})")
-        print_array.append(col)
-        print(f"Facility {i}: Location ({model.lat[i].value}, {model.lon[i].value})")
-    else:
-        lat, lon = cost_functions.facility_coordinates_vals(model, i, site_coordinates, num_sites)
-        col = []
-        col.append(f"Facility {i}:")
-        col.append(f"Location ({lat}, {lon})")
-        print_array.append(col)
-        print(f"Facility {i}: Location ({lat}, {lon})")
-    for j in range(num_sites):
-        if model.x[i, j].value == 1:
-            col = []
-            col.append(f"Draws from site {j} with flow rate {flow_rate_data[j][0]}")
-            print_array.append(col)
-            print(f"  Draws from site {j} with flow rate {flow_rate_data[j][0]}")
-        if sites_flag:
-            if model.z[i, j].value == 1:
-                col = []
-                col.append(f"Facility {i} is assigned to Site {j}")
-                print_array.append(col)
-                print(f"Facility {i} is assigned to Site {j}")
 
-with open('facility_output.csv', 'w', newline='') as file:
-    writer = csv.writer(file)
-    for i in range(len(print_array)):
-        writer.writerow(print_array[i])
 
 
 
