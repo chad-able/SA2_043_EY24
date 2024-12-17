@@ -34,7 +34,7 @@ def print_initial(initial_cost, model, num_facilities, num_sites, site_coordinat
 
     return print_array
 
-def print_final(print_array, final_cost, model, num_facilities, num_sites, site_coordinates, flow_rate_data, sites_flag):
+def print_final(print_array, final_cost, model, num_facilities, num_sites, site_coordinates, flow_rate_data, sites_flag, filename):
     print_array.append("")
     print(f"Final value for annualized cost is {final_cost} $/bbl")
     col = []
@@ -68,7 +68,7 @@ def print_final(print_array, final_cost, model, num_facilities, num_sites, site_
                     print_array.append(col)
                     print(f"Facility {i} is assigned to Site {j}")
 
-    with open('facility_output.csv', 'w', newline='') as file:
+    with open(filename, 'w', newline='') as file:
         writer = csv.writer(file)
         for i in range(len(print_array)):
             writer.writerow(print_array[i])

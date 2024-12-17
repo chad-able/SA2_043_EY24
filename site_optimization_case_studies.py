@@ -21,15 +21,14 @@ import print_functions
 
 
 def main():
-    num_facilities = 3
-    random_seed = 443
+    facility_array = [2, 3, 4]
+    attempts_per = 5
 
-    #random.seed(random_seed)
-    # huc8 = pd.read_csv("huc8_summary.csv")
-    # for i in range(len(huc8.columns)):
-    #     print(huc8.columns[i])
+    random_seed = 43424267667
 
-    filename = ("E:/codes/RC24/PWMapping/NEWTS_Well_Summary_by_Hydrologic_Regions_and_Subbasins.gdb")
+    random.seed(random_seed)
+
+    filename = "E:/codes/RC24/PWMapping/NEWTS_Well_Summary_by_Hydrologic_Regions_and_Subbasins.gdb"
 
     gpd_args = {
         'layer': 1,
@@ -66,102 +65,99 @@ def main():
     # if sites_flag = True, use only sites as locations
     # Otherwise, use any valid location
 
+    for fnum in range(len(facility_array)):
+        num_facilities = facility_array[fnum]
+        sites_flag = False
+        mod_flag = False
 
-    sites_flag = False
-    mod_flag = False
+        for run in range(attempts_per):
+            if not sites_flag:
+                model = init_functions.model_init_any_location(lat_min, lat_max, lon_min, lon_max, num_facilities, num_sites)
 
-    if not sites_flag:
-        model = init_functions.model_init_any_location(lat_min, lat_max, lon_min, lon_max, num_facilities, num_sites)
-
-    else:
-        model = init_functions.model_init_site_locs_only(num_facilities, num_sites)
-
-
-
-
-    def objective_f(model):
-        return cost_functions.facility_obj(model, num_sites, num_facilities, site_coordinates, flow_rate_data, h_approx, sites_flag, mod_flag)
-
-    print(flow_rate_data[0][0])
-    # print("Modular cost is ", cost_functions.annual_cost_modular(num_sites, flow_rate_data))
-    testval = pyo.value(objective_f(model))
-    print_array = print_functions.print_initial(testval, model, num_facilities, num_sites, site_coordinates, sites_flag)
-
-
-    model.objective = pyo.Objective(rule=objective_f, sense=pyo.minimize)
-    #model.pprint()
-
-    model.scaling_factor = pyo.Suffix(direction=pyo.Suffix.EXPORT)
-    model.scaling_factor[model.objective] = modeling_functions.inverse_order_of_magnitude(testval)
-
-    if not sites_flag:
-        model.scaling_factor[model.lat] = modeling_functions.inverse_order_of_magnitude(lat_max)
-        model.scaling_factor[model.lon] = modeling_functions.inverse_order_of_magnitude(lon_max)
-
-    scaled_model = pyo.TransformationFactory('core.scale_model').create_using(model)
-
-
-    executable_paths = {
-        'couenne': "C:/Users/chada/AppData/Local/idaes/bin/couenne",
-        'bonmin': "C:/Users/chada/AppData/Local/idaes/bin/bonmin",
-        'glpk': 'E:\codes\glpk-4.65\w64\glpsol',
-    }
-    #nlp_solver = pyo.SolverFactory('ipopt')
-    #solver = pyo.SolverFactory('cbc')
-    solver = modeling_functions.solver('couenne', executable_paths['couenne'])
-
-    couenne_dict = {
-        'max_cpu_time': 600,
-        'max_iter': 1000,
-        'tol': 1e-3,
-        'bonmin.time_limit': 100,
-        'bonmin.node_limit': 10000,
-        'bonmin.resolve_on_small_infeasibility': 1,
-        'bonmin.cutoff': 10,
-        'art_lower': 0,
-        'art_cutoff': 10,
-        'bonmin.algorithm': "B-Hyb",
-        'bonmin.node_comparison': "dynamic",
-        'bonmin.integer_tolerance': 1e-3,
-        'bonmin.acceptable_tol': 1e-3
-    }
-
-    with open('couenne.opt', 'w') as file:
-        for key, value in couenne_dict.items():
-            write_str = f"{key} {value}"
-            file.write(write_str + "\n")
+            else:
+                model = init_functions.model_init_site_locs_only(num_facilities, num_sites)
 
 
 
 
-    result = solver.solve(scaled_model, tee=True, options={
-        'max_iter': 1000,
-        'bonmin.time_limit': 600,
-        'tol': 1e-4,
-        'acceptable_tol': 1e-3,
-    })
+            def objective_f(model):
+                return cost_functions.facility_obj(model, num_sites, num_facilities, site_coordinates, flow_rate_data, h_approx, sites_flag, mod_flag)
 
-    # result = solver.solve(scaled_model, tee=True, options={
-    #     'max_iter': 100,
-    #     'max_cpu_time': 200,
-    #     'tol': 1e-5,
-    #     'acceptable_tol': 1e-3,
-    #     'bonmin.time_limit': 10,
-    #     'bonmin.node_limit': 300,
-    # })
-
-    # result = solver.solve(scaled_model, tee=True)
+            print(flow_rate_data[0][0])
+            # print("Modular cost is ", cost_functions.annual_cost_modular(num_sites, flow_rate_data))
+            testval = pyo.value(objective_f(model))
+            print_array = print_functions.print_initial(testval, model, num_facilities, num_sites, site_coordinates, sites_flag)
 
 
-    modeling_functions.log_pyomo_infeasible_constraints(scaled_model)
+            model.objective = pyo.Objective(rule=objective_f, sense=pyo.minimize)
 
-    pyo.TransformationFactory('core.scale_model').propagate_solution(scaled_model, model)
 
-    #result = solver.solve(model, mip_solver = 'cbc', nlp_solver = 'ipopt', tee=True, mip_solver_tee=True, nlp_solver_tee=True)
-    #
+            model.scaling_factor = pyo.Suffix(direction=pyo.Suffix.EXPORT)
+            model.scaling_factor[model.objective] = modeling_functions.inverse_order_of_magnitude(testval)
 
-    newval = pyo.value(objective_f(model))
-    finalprint = print_functions.print_final(print_array, newval, model, num_facilities, num_sites, site_coordinates, flow_rate_data, sites_flag)
+            if not sites_flag:
+                model.scaling_factor[model.lat] = modeling_functions.inverse_order_of_magnitude(lat_max)
+                model.scaling_factor[model.lon] = modeling_functions.inverse_order_of_magnitude(lon_max)
+
+            scaled_model = pyo.TransformationFactory('core.scale_model').create_using(model)
+
+            solvers = ['couenne', 'bonmin', 'glpk']
+
+            selected_solver = solvers[0]
+
+            executable_paths = {
+                'couenne': "C:/Users/chada/AppData/Local/idaes/bin/couenne",
+                'bonmin': "C:/Users/chada/AppData/Local/idaes/bin/bonmin",
+                'glpk': 'E:\codes\glpk-4.65\w64\glpsol',
+            }
+
+            solver = modeling_functions.solver(selected_solver, executable_paths[selected_solver])
+
+
+            if selected_solver == 'couenne':
+                couenne_dict = {
+                    'max_cpu_time': 600,
+                    'max_iter': 1000,
+                    'tol': 1e-3,
+                    'bonmin.time_limit': 100,
+                    'bonmin.node_limit': 100000,
+                    'bonmin.resolve_on_small_infeasibility': 1,
+                    'bonmin.cutoff': 10,
+                    'art_lower': 0,
+                    'art_cutoff': 10,
+                    'bonmin.algorithm': "B-Hyb",
+                    'bonmin.node_comparison': "dynamic",
+                    'bonmin.integer_tolerance': 1e-3,
+                    'bonmin.acceptable_tol': 1e-3
+                }
+
+                with open('couenne.opt', 'w') as file:
+                    for key, value in couenne_dict.items():
+                        write_str = f"{key} {value}"
+                        file.write(write_str + "\n")
+
+                result = solver.solve(scaled_model, tee=True)
+
+
+            if selected_solver == 'bonmin':
+
+
+                result = solver.solve(scaled_model, tee=True, options={
+                    'max_iter': 1000,
+                    'bonmin.time_limit': 600,
+                    'tol': 1e-4,
+                    'acceptable_tol': 1e-3,
+                })
+
+
+            modeling_functions.log_pyomo_infeasible_constraints(scaled_model)
+
+            pyo.TransformationFactory('core.scale_model').propagate_solution(scaled_model, model)
+
+
+            print_file = 'facility_output' + str(num_facilities) + '_' + str(run) + '.csv'
+            newval = pyo.value(objective_f(model))
+            finalprint = print_functions.print_final(print_array, newval, model, num_facilities, num_sites, site_coordinates, flow_rate_data, sites_flag, print_file)
 
 
 if __name__ == "__main__":
@@ -169,33 +165,3 @@ if __name__ == "__main__":
 
 
 
-# solver = pyo.SolverFactory('ipopt')
-# result = solver.solve(model, tee=True)
-# def sample_treatment_distance(p):
-# #create sample treatment facility
-#     treatment_test = Point(p[0],p[1])
-#     huc_data["2022_flow_gpm"] = huc_data["F2022_WaterProd_BBL_sum_1"].apply(flow_rate_calc)
-#     total_flow_rate = huc_data["2022_flow_gpm"].sum()
-#     huc_data["treatment_distance"] = huc_data.apply(lambda row: row.geometry_centroids.distance(treatment_test), axis=1)
-#     huc_data["trucking_cost"] = huc_data.apply(lambda row: transportation_cost(row["treatment_distance"], row["2022_flow_gpm"]), axis=1)
-#     trucking = huc_data["trucking_cost"].sum()
-#     capex = treatment_capex(total_flow_rate)
-#     opex = treatment_opex(total_flow_rate)
-#     annual_cost = annualized_cost(capex,opex,trucking,1,0.0769,total_flow_rate)
-
-    #
-    # return annual_cost
-
-# init_points = (-1000000,1000000)
-# min_point = optimize.minimize(sample_treatment_distance, init_points, method="Nelder-Mead")
-# print(min_point)
-
-# centroid_test1 = huc8_data["geometry_centroids"].to_crs('+proj=cea')
-# centroid_test1 = huc8_data["geometry_centroids"]
-# print(centroid_test1)
-# poly = Polygon([[p.x, p.y] for p in centroid_test1])
-# centroid_test2 = poly.centroid
-# print(centroid_test2)
-
-# plot = test.plot(column="F2022_WaterProd_BBL_sum_1")
-# plt.show()
