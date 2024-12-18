@@ -21,12 +21,12 @@ import print_functions
 
 
 def main():
-    facility_array = [2, 3, 4]
-    attempts_per = 5
+    facility_array = [2]
+    attempts_per = 1
 
-    random_seed = 43424267667
-
-    random.seed(random_seed)
+    # random_seed = 43424267667
+    #
+    # random.seed(random_seed)
 
     filename = "E:/codes/RC24/PWMapping/NEWTS_Well_Summary_by_Hydrologic_Regions_and_Subbasins.gdb"
 
@@ -120,12 +120,13 @@ def main():
                     'max_iter': 1000,
                     'tol': 1e-3,
                     'bonmin.time_limit': 100,
-                    'bonmin.node_limit': 100000,
+                    'bonmin.node_limit': 10000,
                     'bonmin.resolve_on_small_infeasibility': 1,
                     'bonmin.cutoff': 10,
                     'art_lower': 0,
                     'art_cutoff': 10,
-                    'bonmin.algorithm': "B-Hyb",
+                    'feas_tolerance': 1e-4,
+                    'bonmin.algorithm': "B-OA",
                     'bonmin.node_comparison': "dynamic",
                     'bonmin.integer_tolerance': 1e-3,
                     'bonmin.acceptable_tol': 1e-3
@@ -147,6 +148,11 @@ def main():
                     'bonmin.time_limit': 600,
                     'tol': 1e-4,
                     'acceptable_tol': 1e-3,
+                    'bonmin.algorithm': 'B-BB',
+                    'bonmin.oa_decomposition': 'yes',
+                    'bonmin.node_comparison': 'dynamic',
+                    'bonmin.num_retry_unsolved_random_point': 5,
+                    'bonmin.random_generator_seed': -1
                 })
 
 
