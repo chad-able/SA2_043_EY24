@@ -1,7 +1,10 @@
 import numpy as np
 from distance_functions import haversine, linear_distance, euclidean_distance
 import modeling_functions
-
+# TODO
+# separate cost functions for specific shale play (may require separate files)
+# Modular + centralized, solids and liquid transport
+# Modular relationships for volume reduction?
 def transportation_cost(dist,flow_rate):
     # assume constant trucking, 60 mph
     # initially in barrels, converted to gallons, from Pareto (p_delta_Truck in strategic_produced_water_optimization, 110 from build_utils)

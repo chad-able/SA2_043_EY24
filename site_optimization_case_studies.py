@@ -23,10 +23,14 @@ import print_functions
 def main():
     facility_array = [2]
     attempts_per = 1
+    random_seed_use = False
+    random_seed = 43424267667
 
-    # random_seed = 43424267667
-    #
-    # random.seed(random_seed)
+    if random_seed_use:
+        random.seed(random_seed)
+
+
+
 
     filename = "E:/codes/RC24/PWMapping/NEWTS_Well_Summary_by_Hydrologic_Regions_and_Subbasins.gdb"
 
@@ -129,6 +133,7 @@ def main():
                     'bonmin.algorithm': "B-OA",
                     'bonmin.node_comparison': "dynamic",
                     'bonmin.integer_tolerance': 1e-3,
+                    'bonmin.num_retry_unsolved_random_point': 5,
                     'bonmin.acceptable_tol': 1e-3
                 }
 

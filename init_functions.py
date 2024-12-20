@@ -2,6 +2,13 @@ import geopandas as gpd
 import random
 import pyomo.environ as pyo
 import modeling_functions
+
+
+# TODO
+# add functionality to separate out single play, list of plays
+# drop wells that do not meet certain flow rate requirements
+# Add in NEWTS concentration data, match to shale play
+
 def read_data(filename, **gpd_args):
     layer = 1
     rows = 100
