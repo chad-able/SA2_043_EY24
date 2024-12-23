@@ -17,6 +17,7 @@ import modeling_functions
 from functools import partial
 import csv
 import print_functions
+import re
 
 
 
@@ -36,7 +37,7 @@ def main():
 
     gpd_args = {
         'layer': 1,
-        'rows': 500
+        'rows': 1000
     }
 
     # initial data read
@@ -46,26 +47,34 @@ def main():
     huc_data = init_functions.centroids(huc_data, 0)
 
 
+
+
+
+
+    huc_data = init_functions.flow_rate(huc_data)
+
+    huc_data["2022_flow_gpm"].fillna(huc_data["2022_flow_gpm"].mean(), inplace=True)
+
+    print(huc_data.head())
+
+    # shale_filename = "E:/codes/RC24/PWMapping/SedimentaryBasins_US_EIA/Lower_48_Sedimentary_Basins.shp"
+    shale_filename = "E:/codes/RC24/PWMapping/TightOil_ShaleGas_Plays_Lower48_EIA/TightOil_ShaleGas_Plays_Lower48_EIA.shp"
+    huc_data = init_functions.shale_plays(huc_data, shale_filename)
+    plays = ['Bakken', 'Eagle Ford', 'Permian']
+    pattern = '|'.join(re.escape(play) for play in plays)
+    # print(huc_data["Shale_play"])
+
+    huc_data = huc_data[huc_data['Shale_play'].str.contains(pattern, case=False, na=False)]
+    num_sites = len(huc_data)
+    print('num_sites is ', num_sites)
     lat_max = huc_data['lat'].max()
     lat_min = huc_data['lat'].min()
     lon_max = huc_data['lon'].max()
     lon_min = huc_data['lon'].min()
 
     h_approx = True
-
     site_coordinates = list(zip(huc_data['lat'], huc_data['lon']))
-
-    huc_data = init_functions.flow_rate(huc_data)
-
-    huc_data["2022_flow_gpm"].fillna(huc_data["2022_flow_gpm"].mean(), inplace=True)
     flow_rate_data = list(zip(huc_data["2022_flow_gpm"]))
-    print(huc_data.head())
-    num_sites = len(huc_data)
-    shale_filename = "E:/codes/RC24/PWMapping/SedimentaryBasins_US_EIA/Lower_48_Sedimentary_Basins.shp"
-    #huc_data = init_functions.shale_plays(huc_data, shale_filename)
-
-    #print(huc_data["Shale_play"])
-
     # if sites_flag = True, use only sites as locations
     # Otherwise, use any valid location
 

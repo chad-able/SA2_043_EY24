@@ -55,7 +55,10 @@ def flow_rate_calc(x):
     return x_gal_per_min
 
 def shale_plays(gpdf, filename):
-    shale_plays = gpd.read_file(filename)
+    gpd_args = {
+        'layer': 0,
+    }
+    shale_plays = gpd.read_file(filename, **gpd_args)
 
     #save original CRS
     originalcrs = gpdf.crs
@@ -74,10 +77,11 @@ def shale_plays(gpdf, filename):
     water_in_shale = gpd.sjoin(water_locations_gdf, shale_plays, how="left", predicate="intersects")
     print(water_in_shale.index)
     print(water_locations_gdf.index)
+    print(shale_plays['Shale_play'])
 
     water_in_shale = water_in_shale.reset_index()
-    point_summary = intersection_percentage(water_in_shale, shale_plays)
-    print(point_summary)
+    # point_summary = intersection_percentage(water_in_shale, shale_plays)
+    # print(point_summary)
     # Group by water location index and aggregate shale play names
     water_in_shale_grouped = water_in_shale.groupby("index").agg({
         'Shale_play': lambda x: list(set(x.dropna()))  # Collect non-NaN matches as a list
@@ -96,7 +100,7 @@ def shale_plays(gpdf, filename):
     #restore original CRS
     restored_gpdf = water_locations_with_shales.to_crs(originalcrs)
 
-    water_locations_with_shales["Shale_play"].to_csv("water_locations.csv", index=False)
+    water_locations_with_shales.to_csv("water_locations.csv", index=False)
 
     return restored_gpdf
 
