@@ -63,7 +63,10 @@ def main():
 
     newts_filename = "E:/codes/RC24/PWMapping/usgs_newts_data.csv"
     newts_data = init_functions.read_conc_data(newts_filename)
-    plays = ['Bakken', 'Eagle Ford', 'Permian']
+
+    plays = ['Permian']
+    newts_data = init_functions.filter_conc_data(newts_data, plays)
+    print(newts_data['Li'].median())
     pattern = '|'.join(re.escape(play) for play in plays)
     # print(huc_data["Shale_play"])
 

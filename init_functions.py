@@ -21,8 +21,18 @@ def read_well_data(filename, **gpd_args):
     return gpdf
 
 def read_conc_data(filename):
-    df = pd.read_csv(filename)
+    df = pd.read_csv(filename, encoding='ISO-8859-1', low_memory = False)
     return df
+
+def filter_conc_data(df, plays):
+    pattern = '|'.join(re.escape(play) for play in plays)
+
+    df = df[df[['BASIN', 'FIELD', 'FORMATION']].apply(
+        lambda row: row.str.contains(pattern, case=False, na=False).any(), axis=1
+    )]
+
+    return df
+
 
 def centroids(gpdf, proj_flag):
 
