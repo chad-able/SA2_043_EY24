@@ -1,3 +1,4 @@
+import pandas as pd
 import geopandas as gpd
 import random
 import pyomo.environ as pyo
@@ -9,7 +10,7 @@ import modeling_functions
 # drop wells that do not meet certain flow rate requirements
 # Add in NEWTS concentration data, match to shale play
 
-def read_data(filename, **gpd_args):
+def read_well_data(filename, **gpd_args):
     layer = 1
     rows = 100
     if 'layer' in gpd_args:
@@ -18,6 +19,10 @@ def read_data(filename, **gpd_args):
         rows = gpd_args['rows']
     gpdf = gpd.read_file(filename, layer=layer, rows=rows)
     return gpdf
+
+def read_conc_data(filename):
+    df = pd.read_csv(filename)
+    return df
 
 def centroids(gpdf, proj_flag):
 

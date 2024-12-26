@@ -33,7 +33,7 @@ def main():
 
 
 
-    filename = "E:/codes/RC24/PWMapping/NEWTS_Well_Summary_by_Hydrologic_Regions_and_Subbasins.gdb"
+    well_filename = "E:/codes/RC24/PWMapping/NEWTS_Well_Summary_by_Hydrologic_Regions_and_Subbasins.gdb"
 
     gpd_args = {
         'layer': 1,
@@ -41,7 +41,7 @@ def main():
     }
 
     # initial data read
-    huc_data = init_functions.read_data(filename, **gpd_args)
+    huc_data = init_functions.read_well_data(well_filename, **gpd_args)
 
     #addition of centroids to dataframe, proj_flag: 0 corresponds to EPSG:4326
     huc_data = init_functions.centroids(huc_data, 0)
@@ -60,6 +60,9 @@ def main():
     # shale_filename = "E:/codes/RC24/PWMapping/SedimentaryBasins_US_EIA/Lower_48_Sedimentary_Basins.shp"
     shale_filename = "E:/codes/RC24/PWMapping/TightOil_ShaleGas_Plays_Lower48_EIA/TightOil_ShaleGas_Plays_Lower48_EIA.shp"
     huc_data = init_functions.shale_plays(huc_data, shale_filename)
+
+    newts_filename = "E:/codes/RC24/PWMapping/usgs_newts_data.csv"
+    newts_data = init_functions.read_conc_data(newts_filename)
     plays = ['Bakken', 'Eagle Ford', 'Permian']
     pattern = '|'.join(re.escape(play) for play in plays)
     # print(huc_data["Shale_play"])

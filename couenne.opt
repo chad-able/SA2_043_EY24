@@ -11,4 +11,5 @@ feas_tolerance 0.0001
 bonmin.algorithm B-OA
 bonmin.node_comparison dynamic
 bonmin.integer_tolerance 0.001
+bonmin.num_retry_unsolved_random_point 5
 bonmin.acceptable_tol 0.001
