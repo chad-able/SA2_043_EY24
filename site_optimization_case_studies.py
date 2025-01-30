@@ -40,6 +40,20 @@ def main():
         'rows': 1000
     }
 
+    texas_param_dict = {
+        'density': 534, # density of solid Li
+        'concentration': 10, # mg/L Li in produced water
+        'central_cap_cost_init': 1000, # $/bbl/day
+        'central_op_cost_init': 1, # $/bbl
+        'modular_cap_cost_init': 5000, # $/bbl/day
+        'modular_op_cost_init': 3 # $/bbl
+        'central_cap_scale_exp': 0.6, # for scaling central capital costs
+        'modular_cap_scale_exp': 0.8, # for scaling modular capital costs
+        'central_op_scale_exp': 1, # for scaling central operating costs
+        'modular_op_scale_exp': 1 # for scaling modular operating costs
+
+    }
+
     # initial data read
     huc_data = init_functions.read_well_data(well_filename, **gpd_args)
 
