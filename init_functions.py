@@ -9,6 +9,7 @@ import modeling_functions
 # add functionality to separate out single play, list of plays
 # drop wells that do not meet certain flow rate requirements
 # Add in NEWTS concentration data, match to shale play
+# Fix shale play relations
 
 def read_well_data(filename, **gpd_args):
     layer = 1
@@ -163,7 +164,8 @@ def model_init_any_location(lat_min, lat_max, lon_min, lon_max, num_facilities, 
     def init_x_wrapper(model, i, j):
         return modeling_functions.initialize_x(model, i, j, num_facilities=num_facilities, num_sites=num_sites)
 
-
+    def coverage_rule(model):
+        return sum(model.x[i, j] for i in range(num_facilities) for j in range(num_sites)) >= num_sites
 
     model.x = pyo.Var(range(num_facilities), range(num_sites), domain=pyo.Binary, initialize=init_x_wrapper)
     model.lat = pyo.Var(range(num_facilities), domain=pyo.Reals, bounds=(lat_min, lat_max), initialize=random_lat_init)
@@ -173,10 +175,9 @@ def model_init_any_location(lat_min, lat_max, lon_min, lon_max, num_facilities, 
     for j in range(num_sites):
         model.assignment_constraint.add(sum(model.x[i, j] for i in range(num_facilities)) <= 1)
 
-    model.coverage_constraint = pyo.Constraint(
-        expr=sum(model.x[i, j] for i in range(num_facilities) for j in range(num_sites)) >= 1 * num_sites)
+    model.coverage_constraint = pyo.Constraint(rule=coverage_rule)
 
-    return(model)
+    return model
 
 def model_init_site_locs_only(num_facilities, num_sites):
 
@@ -203,4 +204,4 @@ def model_init_site_locs_only(num_facilities, num_sites):
     model.coverage_constraint = pyo.Constraint(
         expr=sum(model.x[i, j] for i in range(num_facilities) for j in range(num_sites)) >= 1 * num_sites)
 
-    return(model)
+    return model

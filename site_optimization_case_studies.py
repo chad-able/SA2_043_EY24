@@ -37,22 +37,41 @@ def main():
 
     gpd_args = {
         'layer': 1,
-        'rows': 1000
+        'rows': 600
+    }
+
+    trucking_params = {
+        'truck_capacity_liq': 110, # in barrels, from Pareto (p_delta_Truck in strategic_produced_water_optimization, 110 from build_utils)
+        'truck_hourly_rate': 95, # $/hr, from Pareto, rates vary from 90 to 110 (strategic_toy_case_study, tab TruckingHourlyCost)
+        'truck_driving_speed': 60, # mph
+        'truck_loading_time': 6 # assume 6 hour minimum trucking time for loading/unloading, include travel time
+    }
+
+    costing_params = {
+        'central_cap_cost_init': 1000,  # $/bbl/day, assumed 1000 $/bbl/day from PARETO's treatment technology matrix
+        'central_op_cost_init': 1,  # $/bbl, assumed $1/bbl feed from PARETO's treatment technology matrix
+        'modular_cap_cost_init': 5000,  # $/bbl/day
+        'modular_op_cost_init': 3,  # $/bbl
+        'central_cap_scale_exp': 0.6,  # for scaling central capital costs
+        'modular_cap_scale_exp': 0.8,  # for scaling modular capital costs (not currently supported)
+        'central_op_scale_exp': 1,  # for scaling central operating costs
+        'modular_op_scale_exp': 1,  # for scaling modular operating costs (not currently supported)
+        'base_central_capacity': 5079, # base capacity of the central plant is most commonly 5079 bbl/day from PARETO's treatment technology matrix
+        'utilization': 1, # fraction of uptime, between 0 and 1
+        'capital_recovery_factor': 0.0769 # capital recovery factor for plant life
     }
 
     texas_param_dict = {
         'density': 534, # density of solid Li
         'concentration': 10, # mg/L Li in produced water
-        'central_cap_cost_init': 1000, # $/bbl/day
-        'central_op_cost_init': 1, # $/bbl
-        'modular_cap_cost_init': 5000, # $/bbl/day
-        'modular_op_cost_init': 3 # $/bbl
-        'central_cap_scale_exp': 0.6, # for scaling central capital costs
-        'modular_cap_scale_exp': 0.8, # for scaling modular capital costs
-        'central_op_scale_exp': 1, # for scaling central operating costs
-        'modular_op_scale_exp': 1 # for scaling modular operating costs
+        'costing': costing_params,
+        'trucking': trucking_params # nested dict for trucking parameters
 
     }
+
+    param_dict = texas_param_dict
+
+    print(param_dict['trucking'])
 
     # initial data read
     huc_data = init_functions.read_well_data(well_filename, **gpd_args)
@@ -71,20 +90,22 @@ def main():
 
     print(huc_data.head())
 
-    # shale_filename = "E:/codes/RC24/PWMapping/SedimentaryBasins_US_EIA/Lower_48_Sedimentary_Basins.shp"
-    shale_filename = "E:/codes/RC24/PWMapping/TightOil_ShaleGas_Plays_Lower48_EIA/TightOil_ShaleGas_Plays_Lower48_EIA.shp"
-    huc_data = init_functions.shale_plays(huc_data, shale_filename)
+    shale_filename = "E:/codes/RC24/PWMapping/SedimentaryBasins_US_EIA/Lower_48_Sedimentary_Basins.shp"
+    # shale_filename = "E:/codes/RC24/PWMapping/TightOil_ShaleGas_Plays_Lower48_EIA/TightOil_ShaleGas_Plays_Lower48_EIA.shp"
+    # fix shale play relations
+    # huc_data = init_functions.shale_plays(huc_data, shale_filename)
 
     newts_filename = "E:/codes/RC24/PWMapping/usgs_newts_data.csv"
     newts_data = init_functions.read_conc_data(newts_filename)
 
     plays = ['Permian']
-    newts_data = init_functions.filter_conc_data(newts_data, plays)
-    print(newts_data['Li'].median())
+    # fix conc data calculations
+    # newts_data = init_functions.filter_conc_data(newts_data, plays)
+    # print(newts_data['Li'].median())
     pattern = '|'.join(re.escape(play) for play in plays)
     # print(huc_data["Shale_play"])
 
-    huc_data = huc_data[huc_data['Shale_play'].str.contains(pattern, case=False, na=False)]
+    # huc_data = huc_data[huc_data['Shale_play'].str.contains(pattern, case=False, na=False)]
     num_sites = len(huc_data)
     print('num_sites is ', num_sites)
     lat_max = huc_data['lat'].max()
@@ -114,7 +135,7 @@ def main():
 
 
             def objective_f(model):
-                return cost_functions.facility_obj(model, num_sites, num_facilities, site_coordinates, flow_rate_data, h_approx, sites_flag, mod_flag)
+                return cost_functions.facility_obj(model, num_sites, num_facilities, site_coordinates, flow_rate_data, h_approx, sites_flag, mod_flag, **param_dict)
 
             print(flow_rate_data[0][0])
             # print("Modular cost is ", cost_functions.annual_cost_modular(num_sites, flow_rate_data))
