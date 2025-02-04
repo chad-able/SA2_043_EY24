@@ -37,7 +37,7 @@ def main():
 
     gpd_args = {
         'layer': 1,
-        'rows': 600
+        'rows': 5000
     }
 
     trucking_params = {
@@ -171,14 +171,15 @@ def main():
             if selected_solver == 'couenne':
                 couenne_dict = {
                     'max_cpu_time': 600,
-                    'max_iter': 1000,
+                    'max_iter': 10000,
                     'tol': 1e-3,
                     'bonmin.time_limit': 100,
-                    'bonmin.node_limit': 10000,
+                    'bonmin.node_limit': 100000,
                     'bonmin.resolve_on_small_infeasibility': 1,
                     'bonmin.cutoff': 10,
                     'art_lower': 0,
                     'art_cutoff': 10,
+                    'log_num_obbt_per_level': 10,
                     'feas_tolerance': 1e-4,
                     'bonmin.algorithm': "B-OA",
                     'bonmin.node_comparison': "dynamic",
