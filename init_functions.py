@@ -13,17 +13,16 @@ import re
 # Fix shale play relations
 
 def read_well_data(filename, **gpd_args):
-    layer = 1
-    rows = 100
-    if 'layer' in gpd_args:
-        layer = gpd_args['layer']
-    if 'rows' in gpd_args:
-        rows = gpd_args['rows']
-    gpdf = gpd.read_file(filename, layer=layer, rows=rows)
+    gpdf = gpd.read_file(filename, **gpd_args)
     return gpdf
 
 def read_conc_data(filename):
     df = pd.read_csv(filename, encoding='ISO-8859-1', low_memory = False)
+    newts_usgs = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df['LONGITUDE'], df['LATITUDE']), crs="EPSG:4269")
+    return newts_usgs
+
+def read_conc_shapefile(filename, **gpd_args):
+    df = gpd.read_file(filename, **gpd_args)
     return df
 
 def filter_conc_data(df, plays):
@@ -34,6 +33,30 @@ def filter_conc_data(df, plays):
     )]
 
     return df
+
+
+def combine_conc_data(huc_df, conc_df):
+    conc_array = ['TDS_combined', 'Ag', 'Al', 'As', 'Au', 'B', 'BO3', 'Ba', 'Be', 'Bi', 'Br', 'CO3', 'HCO3', 'Ca', 'Cd',
+                  'Cl', 'Co',
+                  'Cr', 'Cs', 'Cu', 'F', 'FeTot', 'FeIII', 'FeII', 'FeS', 'FeAl', 'FeAl2O3', 'Hg', 'I', 'K', 'KNa',
+                  'Li', 'Mg',
+                  'Mn', 'Mo', 'N', 'NO2', 'NO3', 'NO3NO2', 'NH4', 'TKN', 'Na', 'Ni', 'OH', 'P', 'PO4', 'Pb', 'Rh', 'Rb',
+                  'S', 'SO3',
+                  'SO4', 'HS', 'Sb', 'Sc', 'Se', 'Si', 'Sn', 'Sr', 'Ti', 'Tl', 'U', 'V', 'W', 'Zn', 'ALKHCO3',
+                  'ACIDITY', 'DIC', 'DOC',
+                  'TOC', 'CN', 'BOD', 'COD', 'BENZENE', 'TOLUENE', 'ETHYLBENZ', 'XYLENE', 'ACETATE', 'BUTYRATE',
+                  'FORMATE', 'LACTATE', 'PHENOLS',
+                  'PERC', 'PROPIONATE', 'PYRUVATE', 'VALERATE', 'ORGACIDS', 'Ar', 'CH4', 'C2H6', 'CO2', 'H2', 'H2S',
+                  'He', 'N2', 'NH3',
+                  'O2', 'ALPHA', 'BETA', 'dD', 'H3', 'd7Li', 'd11B', 'd13C', 'C14', 'd18O', 'd34S', 'd37Cl', 'K40',
+                  'd81Br',
+                  'Sr87Sr86', 'I129', 'Rn222', 'Ra226', 'Ra228']
+
+    joined = gpd.sjoin(conc_df, huc_df, how="inner", predicate="within")
+    median_concentration = joined.groupby("huc8")[conc_array].median().reset_index()
+    # #
+    huc_df = huc_df.merge(median_concentration, on="huc8", how="left")
+    return huc_df
 
 
 def centroids(gpdf, proj_flag):
@@ -76,7 +99,7 @@ def shale_plays(gpdf, filename):
         'layer': 0,
     }
     shale_plays = gpd.read_file(filename, **gpd_args)
-
+    shale_plays.rename(columns={'Name': 'Shale_play'}, inplace=True)
     #save original CRS
     originalcrs = gpdf.crs
 
@@ -123,6 +146,38 @@ def shale_plays(gpdf, filename):
 
 def flow_rate_dump(gpdf):
     return gpdf
+
+def filter_by_shale_plays(df, plays):
+    pattern = '|'.join(re.escape(play) for play in plays)
+
+    df = df[df['Shale_play'].str.contains(pattern, case=False, na=False)]
+
+    conc_array = ['TDS_combined', 'Ag', 'Al', 'As', 'Au', 'B', 'BO3', 'Ba', 'Be', 'Bi', 'Br', 'CO3', 'HCO3', 'Ca', 'Cd',
+                  'Cl', 'Co',
+                  'Cr', 'Cs', 'Cu', 'F', 'FeTot', 'FeIII', 'FeII', 'FeS', 'FeAl', 'FeAl2O3', 'Hg', 'I', 'K', 'KNa',
+                  'Li', 'Mg',
+                  'Mn', 'Mo', 'N', 'NO2', 'NO3', 'NO3NO2', 'NH4', 'TKN', 'Na', 'Ni', 'OH', 'P', 'PO4', 'Pb', 'Rh', 'Rb',
+                  'S', 'SO3',
+                  'SO4', 'HS', 'Sb', 'Sc', 'Se', 'Si', 'Sn', 'Sr', 'Ti', 'Tl', 'U', 'V', 'W', 'Zn', 'ALKHCO3',
+                  'ACIDITY', 'DIC', 'DOC',
+                  'TOC', 'CN', 'BOD', 'COD', 'BENZENE', 'TOLUENE', 'ETHYLBENZ', 'XYLENE', 'ACETATE', 'BUTYRATE',
+                  'FORMATE', 'LACTATE', 'PHENOLS',
+                  'PERC', 'PROPIONATE', 'PYRUVATE', 'VALERATE', 'ORGACIDS', 'Ar', 'CH4', 'C2H6', 'CO2', 'H2', 'H2S',
+                  'He', 'N2', 'NH3',
+                  'O2', 'ALPHA', 'BETA', 'dD', 'H3', 'd7Li', 'd11B', 'd13C', 'C14', 'd18O', 'd34S', 'd37Cl', 'K40',
+                  'd81Br',
+                  'Sr87Sr86', 'I129', 'Rn222', 'Ra226', 'Ra228']
+
+    for i in range(len(conc_array)):
+
+        valid = df[df[conc_array[i]].notnull()]
+
+        if len(valid) > 0:
+            weighted_avg = (valid[conc_array[i]] * valid['2022_flow_gpm']).sum() / valid['2022_flow_gpm'].sum()
+
+            df[conc_array[i]] = df[conc_array[i]].fillna(weighted_avg)
+
+    return df
 
 def validity_check(gdf):
     invalid_locations = gdf[~gdf.is_valid]

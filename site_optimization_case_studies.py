@@ -116,6 +116,7 @@ def main():
     h_approx = True
     site_coordinates = list(zip(huc_data['lat'], huc_data['lon']))
     flow_rate_data = list(zip(huc_data["2022_flow_gpm"]))
+    Li_conc = list(zip(huc_data['Li']))
     # if sites_flag = True, use only sites as locations
     # Otherwise, use any valid location
 
