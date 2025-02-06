@@ -37,8 +37,54 @@ def main():
 
     gpd_args = {
         'layer': 1,
-        'rows': 5000
     }
+
+    # initial data read
+    huc_data = init_functions.read_well_data(well_filename, **gpd_args)
+
+    #addition of centroids to dataframe, proj_flag: 0 corresponds to EPSG:4326
+    huc_data = init_functions.centroids(huc_data, 0)
+
+
+
+
+
+
+    huc_data = init_functions.flow_rate(huc_data)
+
+    huc_data["2022_flow_gpm"].fillna(huc_data["2022_flow_gpm"].mean(), inplace=True)
+
+    print(huc_data.head())
+
+    shale_filename = "E:/codes/RC24/PWMapping/SedimentaryBasins_US_EIA/Lower_48_Sedimentary_Basins.shp"
+    # shale_filename = "E:/codes/RC24/PWMapping/TightOil_ShaleGas_Plays_Lower48_EIA/TightOil_ShaleGas_Plays_Lower48_EIA.shp"
+
+
+    newts_filename = "E:/codes/RC24/PWMapping/usgs_newts_data.csv"
+    newts_data = init_functions.read_conc_data(newts_filename)
+    huc_data = init_functions.combine_conc_data(huc_data, newts_data)
+
+    plays = ['Permian']
+    pattern = '|'.join(re.escape(play) for play in plays)
+    # fix shale play relations
+    huc_data = init_functions.shale_plays(huc_data, shale_filename)
+    huc_data = init_functions.filter_by_shale_plays(huc_data, plays, replace_values=False)
+    num_sites = len(huc_data)
+    print('num_sites is ', num_sites)
+    lat_max = huc_data['lat'].max()
+    lat_min = huc_data['lat'].min()
+    lon_max = huc_data['lon'].max()
+    lon_min = huc_data['lon'].min()
+
+    h_approx = True
+    site_coordinates = list(zip(huc_data['lat'], huc_data['lon']))
+    flow_rate_data = list(zip(huc_data["2022_flow_gpm"]))
+    # need to eventually include array of li conc data
+    # Li_conc = list(zip(huc_data['Li']))
+    Li_conc = huc_data['Li'].median()
+    # if sites_flag = True, use only sites as locations
+    # Otherwise, use any valid location
+
 
     trucking_params = {
         'truck_capacity_liq': 110, # in barrels, from Pareto (p_delta_Truck in strategic_produced_water_optimization, 110 from build_utils)
@@ -63,63 +109,13 @@ def main():
 
     texas_param_dict = {
         'density': 534, # density of solid Li
-        'concentration': 10, # mg/L Li in produced water
+        'concentration': Li_conc, # mg/L Li in produced water, currently median of produced water values
         'costing': costing_params,
         'trucking': trucking_params # nested dict for trucking parameters
 
     }
 
     param_dict = texas_param_dict
-
-    print(param_dict['trucking'])
-
-    # initial data read
-    huc_data = init_functions.read_well_data(well_filename, **gpd_args)
-
-    #addition of centroids to dataframe, proj_flag: 0 corresponds to EPSG:4326
-    huc_data = init_functions.centroids(huc_data, 0)
-
-
-
-
-
-
-    huc_data = init_functions.flow_rate(huc_data)
-
-    huc_data["2022_flow_gpm"].fillna(huc_data["2022_flow_gpm"].mean(), inplace=True)
-
-    print(huc_data.head())
-
-    shale_filename = "E:/codes/RC24/PWMapping/SedimentaryBasins_US_EIA/Lower_48_Sedimentary_Basins.shp"
-    # shale_filename = "E:/codes/RC24/PWMapping/TightOil_ShaleGas_Plays_Lower48_EIA/TightOil_ShaleGas_Plays_Lower48_EIA.shp"
-    # fix shale play relations
-    # huc_data = init_functions.shale_plays(huc_data, shale_filename)
-
-    newts_filename = "E:/codes/RC24/PWMapping/usgs_newts_data.csv"
-    newts_data = init_functions.read_conc_data(newts_filename)
-
-    plays = ['Permian']
-    # fix conc data calculations
-    # newts_data = init_functions.filter_conc_data(newts_data, plays)
-    # print(newts_data['Li'].median())
-    pattern = '|'.join(re.escape(play) for play in plays)
-    # print(huc_data["Shale_play"])
-
-    # huc_data = huc_data[huc_data['Shale_play'].str.contains(pattern, case=False, na=False)]
-    num_sites = len(huc_data)
-    print('num_sites is ', num_sites)
-    lat_max = huc_data['lat'].max()
-    lat_min = huc_data['lat'].min()
-    lon_max = huc_data['lon'].max()
-    lon_min = huc_data['lon'].min()
-
-    h_approx = True
-    site_coordinates = list(zip(huc_data['lat'], huc_data['lon']))
-    flow_rate_data = list(zip(huc_data["2022_flow_gpm"]))
-    Li_conc = list(zip(huc_data['Li']))
-    # if sites_flag = True, use only sites as locations
-    # Otherwise, use any valid location
-
     for fnum in range(len(facility_array)):
         num_facilities = facility_array[fnum]
         sites_flag = False
