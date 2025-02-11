@@ -25,4 +25,4 @@ newts_data = init_functions.read_conc_data(newts_filename)
 
 # concentration_profiles = init_functions.concentration_profiles_no_flow_rate(newts_data, shale_filename)
 
-concentration_profiles_flow = init_functions.concentration_profiles_flow_rate(newts_data, shale_filename, well_filename)
+concentration_profiles_flow = init_functions.concentration_profiles_flow_rate(newts_data, shale_filename, huc_data)

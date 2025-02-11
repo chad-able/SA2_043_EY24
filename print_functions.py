@@ -1,5 +1,7 @@
 import csv
 import cost_functions
+import folium
+from folium.plugins import MarkerCluster
 
 def print_initial(initial_cost, model, num_facilities, num_sites, site_coordinates, sites_flag):
     print_array = []
@@ -72,3 +74,27 @@ def print_final(print_array, final_cost, model, num_facilities, num_sites, site_
         writer = csv.writer(file)
         for i in range(len(print_array)):
             writer.writerow(print_array[i])
+
+
+
+def mapping_flow_rates(shale_df, well_df, basin_stats):
+    shale_df = shale_df.merge(basin_stats, on="Shale_play", how="left")
+    well_df = well_df.drop(columns=["loaddate", "geometry_centroids"])
+    basin_wgs84 = shale_df.to_crs(epsg=4326)
+    m = folium.Map(location=[39.5, -98.35], zoom_start=5)
+    folium.GeoJson(basin_wgs84, tooltip=folium.features.GeoJsonTooltip(fields=['Shale_play'], aliases=['Basin:'])).add_to(m)
+    marker_group = folium.FeatureGroup(name="HUC8 Markers", show=True)
+    for idx, row in well_df.iterrows():
+
+        lat, lon = row["lat"], row["lon"]
+        flow_rate = row["2022_flow_gpm"] if "2022_flow_gpm" in row else "N/A"
+
+        huc8_id = row["huc8"] if "huc8" in row else "N/A"
+
+        popup_text = f"HUC-8: {huc8_id}<br>Flow Rate: {flow_rate}<br>Coords: ({lat:.3f}, {lon:.3f})"
+        folium.Marker(location=[lat, lon], popup=popup_text).add_to(marker_group)
+
+    marker_group.add_to(m)
+    folium.LayerControl().add_to(m)
+    folium.GeoJson(well_df).add_to(m)
+    m.save("map.html")

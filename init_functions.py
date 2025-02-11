@@ -4,6 +4,7 @@ import random
 import pyomo.environ as pyo
 import modeling_functions
 import re
+import print_functions
 
 
 # TODO
@@ -179,7 +180,7 @@ def concentration_profiles_no_flow_rate(newts_df, filename):
 
     return shale_df
 
-def concentration_profiles_flow_rate(newts_df, shale_filename, well_filename):
+def concentration_profiles_flow_rate(newts_df, shale_filename, well_df):
 
     conc_array = ['TDS_combined', 'Ag', 'Al', 'As', 'Au', 'B', 'BO3', 'Ba', 'Be', 'Bi', 'Br', 'CO3', 'HCO3', 'Ca', 'Cd',
                   'Cl', 'Co',
@@ -207,29 +208,29 @@ def concentration_profiles_flow_rate(newts_df, shale_filename, well_filename):
     median_concentration = joined.groupby("Shale_play")[conc_array].median().reset_index()
     # #
 
-    well_df = read_well_data(well_filename)
-    well_df = flow_rate(well_df)
     well_df = well_df.to_crs(newts_df.crs)
     well_intersection = gpd.overlay(well_df, shale_df, how="intersection")
     well_intersection["intersect_area"] = well_intersection.geometry.area
     well_df["orig_area"] = well_df.geometry.area
-    well_intersection = well_intersection.merge(well_df[["huc8", "orig_area", "2022_flow_gpm"]], on="huc8_id", how="left")
-
+    well_intersection = well_intersection.merge(well_df[["huc8", "orig_area", "2022_flow_gpm"]], on="huc8", how="left")
+    well_intersection.rename(columns={'2022_flow_gpm_x': '2022_flow_gpm', '2022_flow_gpm_y': '2022_flow_gpm'}, inplace=True)
+    well_intersection = well_intersection.loc[:, ~well_intersection.columns.duplicated()]
     well_intersection["weight"] = well_intersection["intersect_area"] / well_intersection["orig_area"]
-
+    for i in range(len(well_intersection.columns)):
+        print(well_intersection.columns[i])
     well_intersection["weighted_flow"] = well_intersection["2022_flow_gpm"] * well_intersection["weight"]
-
-    flow_stats = intersection.groupby("basin_id").agg(
+    flow_stats = well_intersection.groupby("Shale_play").agg(
         total_weighted_flow=("weighted_flow", "sum"),
-        median_flow=("flow_rate", "median")
+        median_flow=("2022_flow_gpm", "median")
     ).reset_index()
 
     basin_stats = median_concentration.merge(flow_stats, on="Shale_play", how="left")
 
     shale_array = ['Shale_play', 'total_weighted_flow', 'median_flow'] + conc_array
     basin_stats[shale_array].to_csv('concentration_profiles_flow.csv', index=False)
-
+    print_functions.mapping_flow_rates(shale_df, well_df, basin_stats)
     return basin_stats
+
 
 def flow_rate_dump(gpdf):
     return gpdf
