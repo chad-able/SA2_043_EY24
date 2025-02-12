@@ -98,13 +98,19 @@ def main():
         'central_op_cost_init': 1,  # $/bbl, assumed $1/bbl feed from PARETO's treatment technology matrix
         'modular_cap_cost_init': 5000,  # $/bbl/day
         'modular_op_cost_init': 3,  # $/bbl
+        'solids_cap_cost_init': 3000, # $/tonne/day?
+        'solids_op_cost_init': 10, # $/tonne?
         'central_cap_scale_exp': 0.6,  # for scaling central capital costs
         'modular_cap_scale_exp': 0.8,  # for scaling modular capital costs (not currently supported)
+        'solids_cap_scale_exp': 0.6, # for scaling solids treatment capital costs
         'central_op_scale_exp': 1,  # for scaling central operating costs
         'modular_op_scale_exp': 1,  # for scaling modular operating costs (not currently supported)
+        'solids_op_scale_exp': 1, # for scaling solids treatment operating costs
         'base_central_capacity': 5079, # base capacity of the central plant is most commonly 5079 bbl/day from PARETO's treatment technology matrix
+        'base_solids_capacity': 10,  # tonnes/day?
         'utilization': 1, # fraction of uptime, between 0 and 1
         'capital_recovery_factor': 0.0769 # capital recovery factor for plant life
+
     }
 
     texas_param_dict = {
@@ -119,7 +125,7 @@ def main():
     for fnum in range(len(facility_array)):
         num_facilities = facility_array[fnum]
         sites_flag = False
-        mod_flag = False
+        mod_flag = True
 
         for run in range(attempts_per):
             if not sites_flag:
@@ -171,7 +177,7 @@ def main():
                     'max_iter': 10000,
                     'tol': 1e-3,
                     'bonmin.time_limit': 100,
-                    'bonmin.node_limit': 100000,
+                    'bonmin.node_limit': 10000,
                     'bonmin.resolve_on_small_infeasibility': 1,
                     'bonmin.cutoff': 10,
                     'art_lower': 0,

@@ -82,19 +82,49 @@ def mapping_flow_rates(shale_df, well_df, basin_stats):
     well_df = well_df.drop(columns=["loaddate", "geometry_centroids"])
     basin_wgs84 = shale_df.to_crs(epsg=4326)
     m = folium.Map(location=[39.5, -98.35], zoom_start=5)
-    folium.GeoJson(basin_wgs84, tooltip=folium.features.GeoJsonTooltip(fields=['Shale_play'], aliases=['Basin:'])).add_to(m)
-    marker_group = folium.FeatureGroup(name="HUC8 Markers", show=True)
+    # folium.GeoJson(basin_wgs84, tooltip=folium.features.GeoJsonTooltip(fields=['Shale_play'], aliases=['Basin:'])).add_to(m)
+    # folium.GeoJson(basin_wgs84).add_to(m)
+    folium.Choropleth(
+        geo_data=basin_wgs84,
+        data=basin_wgs84,
+        columns=['Shale_play', 'Li'],
+        key_on='feature.properties.Shale_play',
+        fill_color='OrRd',
+        fill_opacity=0.7,
+        line_opacity=0.2,
+        legend_name='Li Median Concentration'
+    ).add_to(m)
+    basin_labels = folium.FeatureGroup(name="Basin Labels", show=True, control=True)
+    for idx, row in basin_wgs84.iterrows():
+        label_point = row.geometry.representative_point()
+        folium.map.Marker(
+            [label_point.y, label_point.x],
+            icon=folium.DivIcon(
+                html=f'<div style="font-size: 8pt; color: black;">{row["Shale_play"]}</div>'
+            )
+        ).add_to(basin_labels)
+    basin_labels.add_to(m)
+    marker_group = folium.FeatureGroup(name="HUC8 Markers", show=False, control=True)
     for idx, row in well_df.iterrows():
 
-        lat, lon = row["lat"], row["lon"]
+        lat = row["lat"]
+        lon = row["lon"]
         flow_rate = row["2022_flow_gpm"] if "2022_flow_gpm" in row else "N/A"
-
+        radius = max(flow_rate/3, 3)
         huc8_id = row["huc8"] if "huc8" in row else "N/A"
 
         popup_text = f"HUC-8: {huc8_id}<br>Flow Rate: {flow_rate}<br>Coords: ({lat:.3f}, {lon:.3f})"
-        folium.Marker(location=[lat, lon], popup=popup_text).add_to(marker_group)
+        folium.CircleMarker(
+            location=[lat, lon],
+            radius=radius,
+            color='blue',
+            fill=True,
+            fill_color='blue',
+            fill_opacity=0.7,
+            popup=popup_text,
+        ).add_to(marker_group)
 
     marker_group.add_to(m)
-    folium.LayerControl().add_to(m)
-    folium.GeoJson(well_df).add_to(m)
+    folium.GeoJson(well_df, show=False).add_to(m)
+    folium.LayerControl(collapsed=False).add_to(m)
     m.save("map.html")

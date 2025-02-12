@@ -35,6 +35,19 @@ def transportation_cost_solids(dist,flow_rate,**params):
 
     return trans_cost
 
+def solids_conversions(flow_rate, **params):
+    # density in kg/m3
+    # concentration in mg/L
+
+    # mass of solute, in milligrams per minute
+
+    mass_solute = params['concentration'] * flow_rate * 3.78541
+
+    # volume of solute in gallons per minute
+
+    vol_solute = mass_solute / 1000000 / params['density'] * 264.172
+
+    return mass_solute, vol_solute
 
 
 
@@ -66,6 +79,29 @@ def treatment_opex_central_scaled(total_flow_rate, **params):
     scaled_cost = initial_cost*((total_flow_rate*60*24/42)/params['base_central_capacity'])**params['central_op_scale_exp']
     return scaled_cost
 
+def treatment_capex_solids(total_solids, **params):
+    # $/tonne/day? total solids in mg/min. Returns $
+    return total_solids * params['solids_cap_cost_init'] * 60 * 24 / 1000000000
+
+def treatment_capex_solids_scaled(total_solids, **params):
+    # attempts to scale costs vs. base capacity, simple exponential curve, returns $
+
+    initial_cost = treatment_capex_solids(total_solids, **params)
+    scaled_cost = initial_cost*((total_solids*60*24/1000000000)/params['base_solids_capacity'])**params['solids_cap_scale_exp']
+    return scaled_cost
+
+def treatment_opex_solids(total_solids, **params):
+    # central op cost in $/bbl, returns $/year
+    return total_solids*params['solids_op_cost_init']*60*24*365/1000000000
+
+def treatment_opex_solids_scaled(total_solids, **params):
+    # attempts to scale costs vs. base capacity, simple exponential curve, returns $/year
+
+
+    initial_cost = treatment_opex_solids(total_solids, **params)
+    scaled_cost = initial_cost*((total_solids*60*24/1000000000)/params['base_solids_capacity'])**params['solids_op_scale_exp']
+    return scaled_cost
+
 def treatment_opex_modular(total_flow_rate, **params):
     # generic, assumed 5 times higher than centralized costs, returns $/year
     return total_flow_rate*params['modular_op_cost_init']*60*24*365/42
@@ -83,6 +119,7 @@ def cost_single_facility_any_central(lat, lon, model, index, num_sites, site_coo
     for j in range(num_sites):
         x_ij = model.x[index, j]
         # t_cost = x_ij * transportation_cost(haversine(lat, lon, site_coordinates[j][0], site_coordinates[j][1], h_approx), flow_rate_data[j][0])
+
         t_cost = x_ij * transportation_cost(
             euclidean_distance(lat, lon, site_coordinates[j][0], site_coordinates[j][1]), flow_rate_data[j][0], **truck_params)
         trans_cost += t_cost
@@ -95,37 +132,36 @@ def cost_single_facility_any_central(lat, lon, model, index, num_sites, site_coo
 
     return capex, opex, trans_cost, total_flow_rate
 
-def cost_sites_modular(lat, lon, model, index, num_sites, site_coordinates, flow_rate_data, h_approx, **params):
+def cost_sites_solids(lat, lon, model, index, num_sites, site_coordinates, flow_rate_data, h_approx, **params):
     trans_cost = 0
     total_flow_rate = 0
+    total_mass = 0
+    truck_params = params['trucking']
     for j in range(num_sites):
         x_ij = model.x[index, j]
         # t_cost = x_ij * transportation_cost(haversine(lat, lon, site_coordinates[j][0], site_coordinates[j][1], h_approx), flow_rate_data[j][0])
-        t_cost = x_ij * transportation_cost_solids(
-            euclidean_distance(lat, lon, site_coordinates[j][0], site_coordinates[j][1]), flow_rate_data[j][0], **params)
+        solids_mass, solids_flow = solids_conversions(flow_rate_data[j][0], **params)
+        t_cost = x_ij * transportation_cost(
+            euclidean_distance(lat, lon, site_coordinates[j][0], site_coordinates[j][1]), solids_flow, **truck_params)
         trans_cost += t_cost
-        flow = x_ij * flow_rate_data[j][0]
+        flow = x_ij * solids_flow
         total_flow_rate += flow
-    capex = treatment_capex_modular(total_flow_rate)
-    opex = treatment_opex_modular(total_flow_rate)
+        total_mass += solids_mass
+    costing_params = params['costing']
+    capex = treatment_capex_solids_scaled(total_mass, **costing_params)
+    opex = treatment_opex_solids_scaled(total_mass, **costing_params)
 
     return capex, opex, trans_cost, total_flow_rate
 
-def annual_cost_modular(num_sites, flow_rate_data, **params):
-    total_flow = 0
+def total_cost_modular(num_sites, flow_rate_data, **params):
     total_cap = 0
     total_op = 0
-    total_truck = 0
     cost_params = params['costing']
     for j in range(num_sites):
-        capex, opex, trans_cost = cost_sites_modular(flow_rate_data[j][0], **cost_params)
-        total_cap += capex
-        total_op += opex
-        total_truck += trans_cost
-        total_flow += flow_rate_data[j][0]
+        total_cap += treatment_capex_modular(flow_rate_data[j][0], **cost_params)
+        total_op += treatment_opex_modular(flow_rate_data[j][0], **cost_params)
 
-    cost_annual = annualized_cost(total_cap, total_op, total_truck, total_flow, 1, 0.0769)
-    return cost_annual
+    return total_cap, total_op
 
 def cost_single_facility_site_central(model, index, num_sites, site_coordinates, flow_rate_data, h_approx, **params):
     trans_cost = 0
@@ -154,8 +190,11 @@ def facility_obj(model, num_sites, num_facilities, site_coordinates, flow_rate_d
     total_truck = 0
     total_flow = 0
     if mod_flag:
+        cap_modular, op_modular = total_cost_modular(num_sites, flow_rate_data, **params)
+        total_cap += cap_modular
+        total_op += op_modular
         for i in range(num_facilities):
-            capex, opex, trucking, flow_rate = cost_sites_modular(model.lat[i],model.lon[i], model, i, num_sites, site_coordinates, flow_rate_data, h_approx, **params)
+            capex, opex, trucking, flow_rate = cost_sites_solids(model.lat[i],model.lon[i], model, i, num_sites, site_coordinates, flow_rate_data, h_approx, **params)
             total_cap += capex
             total_op += opex
             total_truck += trucking
