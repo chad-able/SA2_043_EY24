@@ -1,16 +1,65 @@
+import pandas as pd
 import geopandas as gpd
 import random
 import pyomo.environ as pyo
 import modeling_functions
-def read_data(filename, **gpd_args):
-    layer = 1
-    rows = 100
-    if 'layer' in gpd_args:
-        layer = gpd_args['layer']
-    if 'rows' in gpd_args:
-        rows = gpd_args['rows']
-    gpdf = gpd.read_file(filename, layer=layer, rows=rows)
+import re
+import print_functions
+
+
+# TODO
+# add functionality to separate out single play, list of plays
+# drop wells that do not meet certain flow rate requirements
+# Add in NEWTS concentration data, match to shale play
+# Fix shale play relations
+
+def read_well_data(filename, **gpd_args):
+    gpdf = gpd.read_file(filename, **gpd_args)
     return gpdf
+
+def read_conc_data(filename):
+    df = pd.read_csv(filename, encoding='ISO-8859-1', low_memory = False)
+    newts_usgs = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df['LONGITUDE'], df['LATITUDE']), crs="EPSG:4269")
+    return newts_usgs
+
+def read_conc_shapefile(filename, **gpd_args):
+    df = gpd.read_file(filename, **gpd_args)
+    return df
+
+def filter_conc_data(df, plays):
+    pattern = '|'.join(re.escape(play) for play in plays)
+
+    df = df[df[['BASIN', 'FIELD', 'FORMATION']].apply(
+        lambda row: row.str.contains(pattern, case=False, na=False).any(), axis=1
+    )]
+
+    return df
+
+
+def combine_conc_data(huc_df, conc_df):
+    conc_array = ['TDS_combined', 'Ag', 'Al', 'As', 'Au', 'B', 'BO3', 'Ba', 'Be', 'Bi', 'Br', 'CO3', 'HCO3', 'Ca', 'Cd',
+                  'Cl', 'Co',
+                  'Cr', 'Cs', 'Cu', 'F', 'FeTot', 'FeIII', 'FeII', 'FeS', 'FeAl', 'FeAl2O3', 'Hg', 'I', 'K', 'KNa',
+                  'Li', 'Mg',
+                  'Mn', 'Mo', 'N', 'NO2', 'NO3', 'NO3NO2', 'NH4', 'TKN', 'Na', 'Ni', 'OH', 'P', 'PO4', 'Pb', 'Rh', 'Rb',
+                  'S', 'SO3',
+                  'SO4', 'HS', 'Sb', 'Sc', 'Se', 'Si', 'Sn', 'Sr', 'Ti', 'Tl', 'U', 'V', 'W', 'Zn', 'ALKHCO3',
+                  'ACIDITY', 'DIC', 'DOC',
+                  'TOC', 'CN', 'BOD', 'COD', 'BENZENE', 'TOLUENE', 'ETHYLBENZ', 'XYLENE', 'ACETATE', 'BUTYRATE',
+                  'FORMATE', 'LACTATE', 'PHENOLS',
+                  'PERC', 'PROPIONATE', 'PYRUVATE', 'VALERATE', 'ORGACIDS', 'Ar', 'CH4', 'C2H6', 'CO2', 'H2', 'H2S',
+                  'He', 'N2', 'NH3',
+                  'O2', 'ALPHA', 'BETA', 'dD', 'H3', 'd7Li', 'd11B', 'd13C', 'C14', 'd18O', 'd34S', 'd37Cl', 'K40',
+                  'd81Br',
+                  'Sr87Sr86', 'I129', 'Rn222', 'Ra226', 'Ra228']
+
+    conc_df = conc_df.to_crs(huc_df.crs)
+    joined = gpd.sjoin(conc_df, huc_df, how="inner", predicate="within")
+    median_concentration = joined.groupby("huc8")[conc_array].median().reset_index()
+    # #
+    huc_df = huc_df.merge(median_concentration, on="huc8", how="left")
+    return huc_df
+
 
 def centroids(gpdf, proj_flag):
 
@@ -48,8 +97,11 @@ def flow_rate_calc(x):
     return x_gal_per_min
 
 def shale_plays(gpdf, filename):
-    shale_plays = gpd.read_file(filename)
-
+    gpd_args = {
+        'layer': 0,
+    }
+    shale_plays = gpd.read_file(filename, **gpd_args)
+    shale_plays.rename(columns={'Name': 'Shale_play'}, inplace=True)
     #save original CRS
     originalcrs = gpdf.crs
 
@@ -67,10 +119,11 @@ def shale_plays(gpdf, filename):
     water_in_shale = gpd.sjoin(water_locations_gdf, shale_plays, how="left", predicate="intersects")
     print(water_in_shale.index)
     print(water_locations_gdf.index)
+    print(shale_plays['Shale_play'])
 
     water_in_shale = water_in_shale.reset_index()
-    point_summary = intersection_percentage(water_in_shale, shale_plays)
-    print(point_summary)
+    # point_summary = intersection_percentage(water_in_shale, shale_plays)
+    # print(point_summary)
     # Group by water location index and aggregate shale play names
     water_in_shale_grouped = water_in_shale.groupby("index").agg({
         'Shale_play': lambda x: list(set(x.dropna()))  # Collect non-NaN matches as a list
@@ -89,12 +142,131 @@ def shale_plays(gpdf, filename):
     #restore original CRS
     restored_gpdf = water_locations_with_shales.to_crs(originalcrs)
 
-    water_locations_with_shales["Shale_play"].to_csv("water_locations.csv", index=False)
+    # water_locations_with_shales.to_csv("water_locations.csv", index=False)
 
     return restored_gpdf
 
+def concentration_profiles_no_flow_rate(newts_df, filename):
+
+    conc_array = ['TDS_combined', 'Ag', 'Al', 'As', 'Au', 'B', 'BO3', 'Ba', 'Be', 'Bi', 'Br', 'CO3', 'HCO3', 'Ca', 'Cd',
+                  'Cl', 'Co',
+                  'Cr', 'Cs', 'Cu', 'F', 'FeTot', 'FeIII', 'FeII', 'FeS', 'FeAl', 'FeAl2O3', 'Hg', 'I', 'K', 'KNa',
+                  'Li', 'Mg',
+                  'Mn', 'Mo', 'N', 'NO2', 'NO3', 'NO3NO2', 'NH4', 'TKN', 'Na', 'Ni', 'OH', 'P', 'PO4', 'Pb', 'Rh', 'Rb',
+                  'S', 'SO3',
+                  'SO4', 'HS', 'Sb', 'Sc', 'Se', 'Si', 'Sn', 'Sr', 'Ti', 'Tl', 'U', 'V', 'W', 'Zn', 'ALKHCO3',
+                  'ACIDITY', 'DIC', 'DOC',
+                  'TOC', 'CN', 'BOD', 'COD', 'BENZENE', 'TOLUENE', 'ETHYLBENZ', 'XYLENE', 'ACETATE', 'BUTYRATE',
+                  'FORMATE', 'LACTATE', 'PHENOLS',
+                  'PERC', 'PROPIONATE', 'PYRUVATE', 'VALERATE', 'ORGACIDS', 'Ar', 'CH4', 'C2H6', 'CO2', 'H2', 'H2S',
+                  'He', 'N2', 'NH3',
+                  'O2', 'ALPHA', 'BETA', 'dD', 'H3', 'd7Li', 'd11B', 'd13C', 'C14', 'd18O', 'd34S', 'd37Cl', 'K40',
+                  'd81Br',
+                  'Sr87Sr86', 'I129', 'Rn222', 'Ra226', 'Ra228']
+
+    gpd_args = {
+        'layer': 0,
+    }
+    shale_df = gpd.read_file(filename, **gpd_args)
+    shale_df.rename(columns={'Name': 'Shale_play'}, inplace=True)
+    newts_df = newts_df.to_crs(shale_df.crs)
+    joined = gpd.sjoin(newts_df, shale_df, how="inner", predicate="within")
+    median_concentration = joined.groupby("Shale_play")[conc_array].median().reset_index()
+    # #
+    shale_df = shale_df.merge(median_concentration, on="Shale_play", how="left")
+
+    shale_array = ['Shale_play'] + conc_array
+    shale_df[shale_array].to_csv('concentration_profiles_no_flow.csv', index=False)
+
+    return shale_df
+
+def concentration_profiles_flow_rate(newts_df, shale_filename, well_df):
+
+    conc_array = ['TDS_combined', 'Ag', 'Al', 'As', 'Au', 'B', 'BO3', 'Ba', 'Be', 'Bi', 'Br', 'CO3', 'HCO3', 'Ca', 'Cd',
+                  'Cl', 'Co',
+                  'Cr', 'Cs', 'Cu', 'F', 'FeTot', 'FeIII', 'FeII', 'FeS', 'FeAl', 'FeAl2O3', 'Hg', 'I', 'K', 'KNa',
+                  'Li', 'Mg',
+                  'Mn', 'Mo', 'N', 'NO2', 'NO3', 'NO3NO2', 'NH4', 'TKN', 'Na', 'Ni', 'OH', 'P', 'PO4', 'Pb', 'Rh', 'Rb',
+                  'S', 'SO3',
+                  'SO4', 'HS', 'Sb', 'Sc', 'Se', 'Si', 'Sn', 'Sr', 'Ti', 'Tl', 'U', 'V', 'W', 'Zn', 'ALKHCO3',
+                  'ACIDITY', 'DIC', 'DOC',
+                  'TOC', 'CN', 'BOD', 'COD', 'BENZENE', 'TOLUENE', 'ETHYLBENZ', 'XYLENE', 'ACETATE', 'BUTYRATE',
+                  'FORMATE', 'LACTATE', 'PHENOLS',
+                  'PERC', 'PROPIONATE', 'PYRUVATE', 'VALERATE', 'ORGACIDS', 'Ar', 'CH4', 'C2H6', 'CO2', 'H2', 'H2S',
+                  'He', 'N2', 'NH3',
+                  'O2', 'ALPHA', 'BETA', 'dD', 'H3', 'd7Li', 'd11B', 'd13C', 'C14', 'd18O', 'd34S', 'd37Cl', 'K40',
+                  'd81Br',
+                  'Sr87Sr86', 'I129', 'Rn222', 'Ra226', 'Ra228']
+
+    gpd_args = {
+        'layer': 0,
+    }
+    shale_df = gpd.read_file(shale_filename, **gpd_args)
+    shale_df.rename(columns={'Name': 'Shale_play'}, inplace=True)
+    newts_df = newts_df.to_crs(shale_df.crs)
+    joined = gpd.sjoin(newts_df, shale_df, how="inner", predicate="within")
+    median_concentration = joined.groupby("Shale_play")[conc_array].median().reset_index()
+    # #
+
+    well_df = well_df.to_crs(newts_df.crs)
+    well_intersection = gpd.overlay(well_df, shale_df, how="intersection")
+    well_intersection["intersect_area"] = well_intersection.geometry.area
+    well_df["orig_area"] = well_df.geometry.area
+    well_intersection = well_intersection.merge(well_df[["huc8", "orig_area", "2022_flow_gpm"]], on="huc8", how="left")
+    well_intersection.rename(columns={'2022_flow_gpm_x': '2022_flow_gpm', '2022_flow_gpm_y': '2022_flow_gpm'}, inplace=True)
+    well_intersection = well_intersection.loc[:, ~well_intersection.columns.duplicated()]
+    well_intersection["weight"] = well_intersection["intersect_area"] / well_intersection["orig_area"]
+    for i in range(len(well_intersection.columns)):
+        print(well_intersection.columns[i])
+    well_intersection["weighted_flow"] = well_intersection["2022_flow_gpm"] * well_intersection["weight"]
+    flow_stats = well_intersection.groupby("Shale_play").agg(
+        total_weighted_flow=("weighted_flow", "sum"),
+        median_flow=("2022_flow_gpm", "median")
+    ).reset_index()
+
+    basin_stats = median_concentration.merge(flow_stats, on="Shale_play", how="left")
+
+    shale_array = ['Shale_play', 'total_weighted_flow', 'median_flow'] + conc_array
+    basin_stats[shale_array].to_csv('concentration_profiles_flow.csv', index=False)
+    print_functions.mapping_flow_rates(shale_df, well_df, basin_stats)
+    return basin_stats
+
+
 def flow_rate_dump(gpdf):
     return gpdf
+
+def filter_by_shale_plays(df, plays, replace_values = True):
+    pattern = '|'.join(re.escape(play) for play in plays)
+
+    df = df[df['Shale_play'].str.contains(pattern, case=False, na=False)]
+
+    conc_array = ['TDS_combined', 'Ag', 'Al', 'As', 'Au', 'B', 'BO3', 'Ba', 'Be', 'Bi', 'Br', 'CO3', 'HCO3', 'Ca', 'Cd',
+                  'Cl', 'Co',
+                  'Cr', 'Cs', 'Cu', 'F', 'FeTot', 'FeIII', 'FeII', 'FeS', 'FeAl', 'FeAl2O3', 'Hg', 'I', 'K', 'KNa',
+                  'Li', 'Mg',
+                  'Mn', 'Mo', 'N', 'NO2', 'NO3', 'NO3NO2', 'NH4', 'TKN', 'Na', 'Ni', 'OH', 'P', 'PO4', 'Pb', 'Rh', 'Rb',
+                  'S', 'SO3',
+                  'SO4', 'HS', 'Sb', 'Sc', 'Se', 'Si', 'Sn', 'Sr', 'Ti', 'Tl', 'U', 'V', 'W', 'Zn', 'ALKHCO3',
+                  'ACIDITY', 'DIC', 'DOC',
+                  'TOC', 'CN', 'BOD', 'COD', 'BENZENE', 'TOLUENE', 'ETHYLBENZ', 'XYLENE', 'ACETATE', 'BUTYRATE',
+                  'FORMATE', 'LACTATE', 'PHENOLS',
+                  'PERC', 'PROPIONATE', 'PYRUVATE', 'VALERATE', 'ORGACIDS', 'Ar', 'CH4', 'C2H6', 'CO2', 'H2', 'H2S',
+                  'He', 'N2', 'NH3',
+                  'O2', 'ALPHA', 'BETA', 'dD', 'H3', 'd7Li', 'd11B', 'd13C', 'C14', 'd18O', 'd34S', 'd37Cl', 'K40',
+                  'd81Br',
+                  'Sr87Sr86', 'I129', 'Rn222', 'Ra226', 'Ra228']
+
+    if replace_values:
+        for i in range(len(conc_array)):
+
+            valid = df[df[conc_array[i]].notnull()]
+
+            if len(valid) > 0:
+                weighted_avg = (valid[conc_array[i]] * valid['2022_flow_gpm']).sum() / valid['2022_flow_gpm'].sum()
+
+                df[conc_array[i]] = df[conc_array[i]].fillna(weighted_avg)
+
+    return df
 
 def validity_check(gdf):
     invalid_locations = gdf[~gdf.is_valid]
@@ -137,7 +309,8 @@ def model_init_any_location(lat_min, lat_max, lon_min, lon_max, num_facilities, 
     def init_x_wrapper(model, i, j):
         return modeling_functions.initialize_x(model, i, j, num_facilities=num_facilities, num_sites=num_sites)
 
-
+    def coverage_rule(model):
+        return sum(model.x[i, j] for i in range(num_facilities) for j in range(num_sites)) >= num_sites
 
     model.x = pyo.Var(range(num_facilities), range(num_sites), domain=pyo.Binary, initialize=init_x_wrapper)
     model.lat = pyo.Var(range(num_facilities), domain=pyo.Reals, bounds=(lat_min, lat_max), initialize=random_lat_init)
@@ -147,10 +320,9 @@ def model_init_any_location(lat_min, lat_max, lon_min, lon_max, num_facilities, 
     for j in range(num_sites):
         model.assignment_constraint.add(sum(model.x[i, j] for i in range(num_facilities)) <= 1)
 
-    model.coverage_constraint = pyo.Constraint(
-        expr=sum(model.x[i, j] for i in range(num_facilities) for j in range(num_sites)) >= 1 * num_sites)
+    model.coverage_constraint = pyo.Constraint(rule=coverage_rule)
 
-    return(model)
+    return model
 
 def model_init_site_locs_only(num_facilities, num_sites):
 
@@ -177,4 +349,4 @@ def model_init_site_locs_only(num_facilities, num_sites):
     model.coverage_constraint = pyo.Constraint(
         expr=sum(model.x[i, j] for i in range(num_facilities) for j in range(num_sites)) >= 1 * num_sites)
 
-    return(model)
+    return model
