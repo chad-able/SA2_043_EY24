@@ -144,7 +144,7 @@ def cost_sites_solids(lat, lon, model, index, num_sites, site_coordinates, flow_
         t_cost = x_ij * transportation_cost(
             euclidean_distance(lat, lon, site_coordinates[j][0], site_coordinates[j][1]), solids_flow, **truck_params)
         trans_cost += t_cost
-        flow = x_ij * solids_flow
+        flow = x_ij * flow_rate_data[j][0]
         total_flow_rate += flow
         total_mass += solids_mass
     costing_params = params['costing']
@@ -217,7 +217,6 @@ def facility_obj(model, num_sites, num_facilities, site_coordinates, flow_rate_d
                 total_truck += trucking
                 total_flow += flow_rate
 
-    # print('total_cost is', total_cost)
     annual_cost = annualized_cost(total_cap, total_op, total_truck, total_flow, 1, 0.0769)
     return annual_cost
 

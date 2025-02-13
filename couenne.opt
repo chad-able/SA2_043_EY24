@@ -2,7 +2,7 @@ max_cpu_time 600
 max_iter 10000
 tol 0.001
 bonmin.time_limit 100
-bonmin.node_limit 100000
+bonmin.node_limit 10000
 bonmin.resolve_on_small_infeasibility 1
 bonmin.cutoff 10
 art_lower 0
