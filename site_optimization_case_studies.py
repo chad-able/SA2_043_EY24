@@ -87,10 +87,17 @@ def main():
 
 
     trucking_params = {
+        'use_pareto': True,
         'truck_capacity_liq': 110, # in barrels, from Pareto (p_delta_Truck in strategic_produced_water_optimization, 110 from build_utils)
         'truck_hourly_rate': 95, # $/hr, from Pareto, rates vary from 90 to 110 (strategic_toy_case_study, tab TruckingHourlyCost)
         'truck_driving_speed': 60, # mph
         'truck_loading_time': 6 # assume 6 hour minimum trucking time for loading/unloading, include travel time
+    }
+
+    alt_trucking_params = {
+        'use_pareto': False,
+        'truck_variable_cost': 0.10 # $/bbl/mile, from https://doi.org/10.2118/157532-MS (range from 0.02 to 0.40, from 2012)
+        # other sources for trucking cost include doi:10.1002/aic.14705, https://www.osti.gov/servlets/purl/1533719
     }
 
     costing_params = {
@@ -125,11 +132,11 @@ def main():
     for fnum in range(len(facility_array)):
         num_facilities = facility_array[fnum]
         sites_flag = False
-        mod_flag = True
-
+        mod_flag = False
+        is_hybrid = False
         for run in range(attempts_per):
             if not sites_flag:
-                model = init_functions.model_init_any_location(lat_min, lat_max, lon_min, lon_max, num_facilities, num_sites)
+                model = init_functions.model_init_any_location(lat_min, lat_max, lon_min, lon_max, num_facilities, num_sites, is_hybrid)
 
             else:
                 model = init_functions.model_init_site_locs_only(num_facilities, num_sites)
@@ -174,8 +181,8 @@ def main():
             if selected_solver == 'couenne':
                 couenne_dict = {
                     'max_cpu_time': 600,
-                    'max_iter': 10000,
-                    'tol': 1e-3,
+                    'max_iter': 100000,
+                    'tol': 1e-2,
                     'bonmin.time_limit': 100,
                     'bonmin.node_limit': 10000,
                     'bonmin.resolve_on_small_infeasibility': 1,
@@ -183,7 +190,7 @@ def main():
                     'art_lower': 0,
                     'art_cutoff': 10,
                     'log_num_obbt_per_level': 10,
-                    'feas_tolerance': 1e-4,
+                    'feas_tolerance': 1e-3,
                     'bonmin.algorithm': "B-OA",
                     'bonmin.node_comparison': "dynamic",
                     'bonmin.integer_tolerance': 1e-3,

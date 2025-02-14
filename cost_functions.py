@@ -6,18 +6,22 @@ import modeling_functions
 # Modular + centralized, solids and liquid transport
 # Modular relationships for volume reduction?
 def transportation_cost(dist,flow_rate, **params):
-    # assume constant trucking
-    # initially in barrels, converted to gallons
-    truck_capacity = params['truck_capacity_liq']*42
-    # $/hr
-    truck_hourly_rate = params['truck_hourly_rate']
-    # starts in mph, convert to meters per hour
-    truck_speed = params['truck_driving_speed']*1609.34
-    # sigmoid function used to bring truck_time to 0 at distance = 0
-    truck_time = params['truck_loading_time']*modeling_functions.sigmoid_shifted(dist, 30, 1)+dist/truck_speed
-    # number of trucks required per year
-    truck_num = np.ceil(flow_rate/truck_capacity*60*24*365)
-    truck_cost_per_year = truck_hourly_rate*truck_time*truck_num
+    if params['use_pareto']:
+        # assume constant trucking
+        # initially in barrels, converted to gallons
+        truck_capacity = params['truck_capacity_liq']*42
+        # $/hr
+        truck_hourly_rate = params['truck_hourly_rate']
+        # starts in mph, convert to km per hour
+        truck_speed = params['truck_driving_speed']*1.60934
+        # sigmoid function used to bring truck_time to 0 at distance = 0
+        truck_time = params['truck_loading_time']*modeling_functions.sigmoid_shifted(dist, 30, 1)+dist/truck_speed
+        # number of trucks required per year
+        truck_num = np.ceil(flow_rate/truck_capacity*60*24*365)
+        truck_cost_per_year = truck_hourly_rate*truck_time*truck_num
+    else:
+        # much simpler relation, carries in cost in $/bbl/mile, converts using flow rate and distance, generates $/year
+        truck_cost_per_year = params['truck_variable_cost']*dist/1.60934*flow_rate/42*60*24*365
     return truck_cost_per_year
 
 def transportation_cost_solids(dist,flow_rate,**params):
@@ -112,18 +116,22 @@ def annualized_cost(t_capex,t_opex,trucking,total_flow_rate,ut=1,crf=0.0769):
     return cost_annual
 
 
-def cost_single_facility_any_central(lat, lon, model, index, num_sites, site_coordinates, flow_rate_data, h_approx, **params):
+def cost_single_facility_any_central(lat, lon, model, index, num_sites, site_coordinates, flow_rate_data, h_approx, is_hybrid, **params):
     trans_cost = 0
     total_flow_rate = 0
     truck_params = params['trucking']
     for j in range(num_sites):
         x_ij = model.x[index, j]
-        # t_cost = x_ij * transportation_cost(haversine(lat, lon, site_coordinates[j][0], site_coordinates[j][1], h_approx), flow_rate_data[j][0])
+        if is_hybrid:
+            y_ij = model.y[j]
+        else:
+            y_ij = 0
+        # t_cost = (1 - y_ij) * x_ij * transportation_cost(haversine(lat, lon, site_coordinates[j][0], site_coordinates[j][1], h_approx), flow_rate_data[j][0])
 
-        t_cost = x_ij * transportation_cost(
+        t_cost = (1 - y_ij) * x_ij * transportation_cost(
             euclidean_distance(lat, lon, site_coordinates[j][0], site_coordinates[j][1]), flow_rate_data[j][0], **truck_params)
         trans_cost += t_cost
-        flow = x_ij * flow_rate_data[j][0]
+        flow = (1 - y_ij) * x_ij * flow_rate_data[j][0]
         total_flow_rate += flow
 
     cost_params = params['costing']
@@ -132,28 +140,34 @@ def cost_single_facility_any_central(lat, lon, model, index, num_sites, site_coo
 
     return capex, opex, trans_cost, total_flow_rate
 
-def cost_sites_solids(lat, lon, model, index, num_sites, site_coordinates, flow_rate_data, h_approx, **params):
+def cost_sites_solids(lat, lon, model, index, num_sites, site_coordinates, flow_rate_data, h_approx, is_hybrid, **params):
     trans_cost = 0
     total_flow_rate = 0
     total_mass = 0
     truck_params = params['trucking']
     for j in range(num_sites):
-        x_ij = model.x[index, j]
+
+        if is_hybrid:
+            y_ij = model.y[j]
+            x_ij = model.z[index, j]
+        else:
+            y_ij = 1
+            x_ij = model.x[index, j]
         # t_cost = x_ij * transportation_cost(haversine(lat, lon, site_coordinates[j][0], site_coordinates[j][1], h_approx), flow_rate_data[j][0])
         solids_mass, solids_flow = solids_conversions(flow_rate_data[j][0], **params)
-        t_cost = x_ij * transportation_cost(
+        t_cost = y_ij * x_ij * transportation_cost(
             euclidean_distance(lat, lon, site_coordinates[j][0], site_coordinates[j][1]), solids_flow, **truck_params)
         trans_cost += t_cost
-        flow = x_ij * flow_rate_data[j][0]
+        flow = y_ij * x_ij * flow_rate_data[j][0]
         total_flow_rate += flow
-        total_mass += solids_mass
+        total_mass += y_ij * solids_mass
     costing_params = params['costing']
     capex = treatment_capex_solids_scaled(total_mass, **costing_params)
     opex = treatment_opex_solids_scaled(total_mass, **costing_params)
 
     return capex, opex, trans_cost, total_flow_rate
 
-def total_cost_modular(num_sites, flow_rate_data, **params):
+def total_cost_modular(num_sites, flow_rate_data, model,  **params):
     total_cap = 0
     total_op = 0
     cost_params = params['costing']
@@ -183,39 +197,67 @@ def cost_single_facility_site_central(model, index, num_sites, site_coordinates,
 
     return capex, opex, trans_cost, total_flow_rate
 
+def cost_sites_hybrid(lat, lon, model, index, num_sites, site_coordinates, flow_rate_data, h_approx, **params):
+    trans_cost = 0
+    total_flow_rate = 0
+    truck_params = params['trucking']
+    for j in range(num_sites):
+        x_ij = model.x[index, j]
+        y_ij = model.y[index, j]
+        z_ij = model.z[index, j]
+        solids_mass, solids_flow = solids_conversions(flow_rate_data[j][0], **params)
+        # t_cost = x_ij * transportation_cost(haversine(lat, lon, site_coordinates[j][0], site_coordinates[j][1], h_approx), flow_rate_data[j][0])
 
-def facility_obj(model, num_sites, num_facilities, site_coordinates, flow_rate_data, h_approx, sites_flag, mod_flag, **params):
+        t_cost_liq = (1 - y_ij) * x_ij * transportation_cost(
+            euclidean_distance(lat, lon, site_coordinates[j][0], site_coordinates[j][1]), flow_rate_data[j][0], **truck_params)
+        t_cos_sol = y_ij * z_ij * transportation_cost(
+            euclidean_distance(lat, lon, site_coordinates[j][0], site_coordinates[j][1]), solids_flow, **truck_params)
+        trans_cost += t_cost_liq + t_cost_sol
+        flow = x_ij * flow_rate_data[j][0]
+        total_flow_rate += flow
+
+    cost_params = params['costing']
+    capex = treatment_capex_central_scaled(total_flow_rate, **cost_params)
+    opex = treatment_opex_central_scaled(total_flow_rate, **cost_params)
+
+    return capex, opex, trans_cost, total_flow_rate
+def facility_obj(model, num_sites, num_facilities, site_coordinates, flow_rate_data, h_approx, sites_flag, mod_flag, is_hybrid, **params):
     total_cap = 0
     total_op = 0
     total_truck = 0
     total_flow = 0
-    if mod_flag:
-        cap_modular, op_modular = total_cost_modular(num_sites, flow_rate_data, **params)
-        total_cap += cap_modular
-        total_op += op_modular
+    if is_hybrid:
         for i in range(num_facilities):
-            capex, opex, trucking, flow_rate = cost_sites_solids(model.lat[i],model.lon[i], model, i, num_sites, site_coordinates, flow_rate_data, h_approx, **params)
-            total_cap += capex
-            total_op += opex
-            total_truck += trucking
-            total_flow += flow_rate
+            liq_cap, liq_op, liq_truck, liq_flow = cost_single_facility_any_central(model.lat[i],model.lon[i], model, i, num_sites, site_coordinates, flow_rate_data, h_approx, is_hybrid, **params)
+            sol_cap, sol_op, sol_truck, sol_flow = cost_sites_solids(model.lat[i],model.lon[i], model, i, num_sites, site_coordinates, flow_rate_data, h_approx, is_hybrid, **params)
     else:
-        if not sites_flag:
+        if mod_flag:
+            cap_modular, op_modular = total_cost_modular(num_sites, flow_rate_data, **params)
+            total_cap += cap_modular
+            total_op += op_modular
             for i in range(num_facilities):
-                # print('facility number ', i)
-                capex, opex, trucking, flow_rate = cost_single_facility_any_central(model.lat[i],model.lon[i], model, i, num_sites, site_coordinates, flow_rate_data, h_approx, **params)
+                capex, opex, trucking, flow_rate = cost_sites_solids(model.lat[i],model.lon[i], model, i, num_sites, site_coordinates, flow_rate_data, h_approx, is_hybrid, **params)
                 total_cap += capex
                 total_op += opex
                 total_truck += trucking
                 total_flow += flow_rate
-
         else:
-            for i in range(num_facilities):
-                capex, opex, trucking, flow_rate = cost_single_facility_site_central(model, i, num_sites, site_coordinates, flow_rate_data, h_approx)
-                total_cap += capex
-                total_op += opex
-                total_truck += trucking
-                total_flow += flow_rate
+            if not sites_flag:
+                for i in range(num_facilities):
+                    # print('facility number ', i)
+                    capex, opex, trucking, flow_rate = cost_single_facility_any_central(model.lat[i],model.lon[i], model, i, num_sites, site_coordinates, flow_rate_data, h_approx, is_hybrid, **params)
+                    total_cap += capex
+                    total_op += opex
+                    total_truck += trucking
+                    total_flow += flow_rate
+
+            else:
+                for i in range(num_facilities):
+                    capex, opex, trucking, flow_rate = cost_single_facility_site_central(model, i, num_sites, site_coordinates, flow_rate_data, h_approx)
+                    total_cap += capex
+                    total_op += opex
+                    total_truck += trucking
+                    total_flow += flow_rate
 
     annual_cost = annualized_cost(total_cap, total_op, total_truck, total_flow, 1, 0.0769)
     return annual_cost

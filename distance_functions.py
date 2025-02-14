@@ -47,7 +47,8 @@ def linear_distance(lat1, lon1, lat2, lon2):
 def euclidean_distance(lat1, lon1, lat2, lon2):
     lat_dist = lat_dist_conv(lat1, lat2)
     lon_dist = lon_dist_conv(lat1, lat2, lon1, lon2)
-    return pyo.sqrt(lat_dist**2+lon_dist**2)
+    eps = 1e-6  # to ensure that sqrt is never 0
+    return pyo.sqrt(lat_dist**2+lon_dist**2+eps)
 
 def lat_dist_conv(lat1, lat2):
     # from lat1, lat2 in degrees to a distance in km

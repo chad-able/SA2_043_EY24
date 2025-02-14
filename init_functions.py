@@ -297,7 +297,7 @@ def intersection_percentage(gdf, shale_plays):
     return point_summary
 
 
-def model_init_any_location(lat_min, lat_max, lon_min, lon_max, num_facilities, num_sites):
+def model_init_any_location(lat_min, lat_max, lon_min, lon_max, num_facilities, num_sites, is_hybrid):
     model = pyo.ConcreteModel()
 
     def random_lat_init(model, i):
@@ -309,16 +309,29 @@ def model_init_any_location(lat_min, lat_max, lon_min, lon_max, num_facilities, 
     def init_x_wrapper(model, i, j):
         return modeling_functions.initialize_x(model, i, j, num_facilities=num_facilities, num_sites=num_sites)
 
+    def init_y_wrapper(model, j):
+        return modeling_functions.initialize_y(model, j, num_sites = num_sites)
     def coverage_rule(model):
         return sum(model.x[i, j] for i in range(num_facilities) for j in range(num_sites)) >= num_sites
 
+    # for centralized facilities (solids or liquids)
     model.x = pyo.Var(range(num_facilities), range(num_sites), domain=pyo.Binary, initialize=init_x_wrapper)
+    if is_hybrid:
+        # for deciding centralized or modular)
+        model.y = pyo.Var(range(num_sites), domain=pyo.Binary, initialize=init_y_wrapper)
+        # second facility class (functionally identical to x)
+        model.z = pyo.Var(range(num_facilities), range(num_sites), domain=pyo.Binary, initialize=init_x_wrapper)
     model.lat = pyo.Var(range(num_facilities), domain=pyo.Reals, bounds=(lat_min, lat_max), initialize=random_lat_init)
     model.lon = pyo.Var(range(num_facilities), domain=pyo.Reals, bounds=(lon_min, lon_max), initialize=random_lon_init)
 
     model.assignment_constraint = pyo.ConstraintList()
     for j in range(num_sites):
-        model.assignment_constraint.add(sum(model.x[i, j] for i in range(num_facilities)) <= 1)
+        if is_hybrid:
+            model.assignment_constraint.add(sum(model.x[i, j] for i in range(num_facilities)) + model.y[j] <= 1)
+            model.assignment_constraint.add(sum(model.z[i, j] for i in range(num_facilities)) <= model.y[j])
+        else:
+            model.assignment_constraint.add(sum(model.x[i, j] for i in range(num_facilities)) <= 1)
+
 
     model.coverage_constraint = pyo.Constraint(rule=coverage_rule)
 
@@ -350,3 +363,4 @@ def model_init_site_locs_only(num_facilities, num_sites):
         expr=sum(model.x[i, j] for i in range(num_facilities) for j in range(num_sites)) >= 1 * num_sites)
 
     return model
+

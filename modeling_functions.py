@@ -49,6 +49,13 @@ def initialize_x(model, i, j, num_facilities, num_sites):
     # Assign 1 to the selected facility, 0 to others
     return 1 if model.x_assignments[j] == i else 0
 
+def initialize_y(model, j, num_sites):
+    # Precompute assignments only once and store them as an attribute of the model.
+    if not hasattr(model, 'y_assignments'):
+        # For each site j, randomly choose between 0 (centralized) and 1 (on-site)
+        model.y_assignments = {j: random.choice([0, 1]) for j in range(num_sites)}
+    return model.y_assignments[j]
+
 def initialize_z(model, i, j, num_facilities, num_sites):
 
 

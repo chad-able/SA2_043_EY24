@@ -1,6 +1,6 @@
 max_cpu_time 600
-max_iter 10000
-tol 0.001
+max_iter 100000
+tol 0.01
 bonmin.time_limit 100
 bonmin.node_limit 10000
 bonmin.resolve_on_small_infeasibility 1
@@ -8,7 +8,7 @@ bonmin.cutoff 10
 art_lower 0
 art_cutoff 10
 log_num_obbt_per_level 10
-feas_tolerance 0.0001
+feas_tolerance 0.001
 bonmin.algorithm B-OA
 bonmin.node_comparison dynamic
 bonmin.integer_tolerance 0.001
