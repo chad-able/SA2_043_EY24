@@ -307,10 +307,13 @@ def model_init_any_location(lat_min, lat_max, lon_min, lon_max, num_facilities, 
         return random.uniform(lon_min, lon_max)
 
     def init_x_wrapper(model, i, j):
-        return modeling_functions.initialize_x(model, i, j, num_facilities=num_facilities, num_sites=num_sites)
+        return modeling_functions.initialize_x(model, i, j, num_facilities=num_facilities, num_sites=num_sites, is_hybrid=is_hybrid)
 
     def init_y_wrapper(model, j):
         return modeling_functions.initialize_y(model, j, num_sites = num_sites)
+
+    def init_z_wrapper(model, i, j):
+        return modeling_functions.initialize_z(model, i, j, num_facilities=num_facilities, num_sites=num_sites, is_hybrid=is_hybrid)
     def coverage_rule(model):
         return sum(model.x[i, j] for i in range(num_facilities) for j in range(num_sites)) >= num_sites
 
@@ -321,16 +324,25 @@ def model_init_any_location(lat_min, lat_max, lon_min, lon_max, num_facilities, 
         model.y = pyo.Var(range(num_sites), domain=pyo.Binary, initialize=init_y_wrapper)
         # second facility class (functionally identical to x)
         model.z = pyo.Var(range(num_facilities), range(num_sites), domain=pyo.Binary, initialize=init_x_wrapper)
-    model.lat = pyo.Var(range(num_facilities), domain=pyo.Reals, bounds=(lat_min, lat_max), initialize=random_lat_init)
-    model.lon = pyo.Var(range(num_facilities), domain=pyo.Reals, bounds=(lon_min, lon_max), initialize=random_lon_init)
+        model.lat_c = pyo.Var(range(num_facilities), domain=pyo.Reals, bounds=(lat_min, lat_max),
+                            initialize=random_lat_init)
+        model.lon_c = pyo.Var(range(num_facilities), domain=pyo.Reals, bounds=(lon_min, lon_max),
+                            initialize=random_lon_init)
+        model.lat_s = pyo.Var(range(num_facilities), domain=pyo.Reals, bounds=(lat_min, lat_max),
+                            initialize=random_lat_init)
+        model.lon_s = pyo.Var(range(num_facilities), domain=pyo.Reals, bounds=(lon_min, lon_max),
+                            initialize=random_lon_init)
+    else:
+        model.lat = pyo.Var(range(num_facilities), domain=pyo.Reals, bounds=(lat_min, lat_max), initialize=random_lat_init)
+        model.lon = pyo.Var(range(num_facilities), domain=pyo.Reals, bounds=(lon_min, lon_max), initialize=random_lon_init)
 
     model.assignment_constraint = pyo.ConstraintList()
     for j in range(num_sites):
         if is_hybrid:
-            model.assignment_constraint.add(sum(model.x[i, j] for i in range(num_facilities)) + model.y[j] <= 1)
-            model.assignment_constraint.add(sum(model.z[i, j] for i in range(num_facilities)) <= model.y[j])
+            model.assignment_constraint.add(sum(model.x[i, j] for i in range(num_facilities)) + model.y[j] == 1)
+            model.assignment_constraint.add(sum(model.z[i, j] for i in range(num_facilities)) == model.y[j])
         else:
-            model.assignment_constraint.add(sum(model.x[i, j] for i in range(num_facilities)) <= 1)
+            model.assignment_constraint.add(sum(model.x[i, j] for i in range(num_facilities)) == 1)
 
 
     model.coverage_constraint = pyo.Constraint(rule=coverage_rule)

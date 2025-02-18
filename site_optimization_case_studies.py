@@ -39,6 +39,7 @@ def main():
         'layer': 1,
     }
 
+
     # initial data read
     huc_data = init_functions.read_well_data(well_filename, **gpd_args)
 
@@ -131,9 +132,11 @@ def main():
     param_dict = texas_param_dict
     for fnum in range(len(facility_array)):
         num_facilities = facility_array[fnum]
+
+
         sites_flag = False
         mod_flag = False
-        is_hybrid = False
+        is_hybrid = True
         for run in range(attempts_per):
             if not sites_flag:
                 model = init_functions.model_init_any_location(lat_min, lat_max, lon_min, lon_max, num_facilities, num_sites, is_hybrid)
@@ -145,12 +148,12 @@ def main():
 
 
             def objective_f(model):
-                return cost_functions.facility_obj(model, num_sites, num_facilities, site_coordinates, flow_rate_data, h_approx, sites_flag, mod_flag, **param_dict)
+                return cost_functions.facility_obj(model, num_sites, num_facilities, site_coordinates, flow_rate_data, h_approx, sites_flag, mod_flag, is_hybrid, **param_dict)
 
             print(flow_rate_data[0][0])
             # print("Modular cost is ", cost_functions.annual_cost_modular(num_sites, flow_rate_data))
             testval = pyo.value(objective_f(model))
-            print_array = print_functions.print_initial(testval, model, num_facilities, num_sites, site_coordinates, sites_flag)
+            print_array = print_functions.print_initial(testval, model, num_facilities, num_sites, site_coordinates, flow_rate_data, sites_flag, is_hybrid)
 
 
             model.objective = pyo.Objective(rule=objective_f, sense=pyo.minimize)
@@ -159,7 +162,12 @@ def main():
             model.scaling_factor = pyo.Suffix(direction=pyo.Suffix.EXPORT)
             model.scaling_factor[model.objective] = modeling_functions.inverse_order_of_magnitude(testval)
 
-            if not sites_flag:
+            if is_hybrid:
+                model.scaling_factor[model.lat_c] = modeling_functions.inverse_order_of_magnitude(lat_max)
+                model.scaling_factor[model.lon_c] = modeling_functions.inverse_order_of_magnitude(lon_max)
+                model.scaling_factor[model.lat_s] = modeling_functions.inverse_order_of_magnitude(lat_max)
+                model.scaling_factor[model.lon_s] = modeling_functions.inverse_order_of_magnitude(lon_max)
+            elif not sites_flag:
                 model.scaling_factor[model.lat] = modeling_functions.inverse_order_of_magnitude(lat_max)
                 model.scaling_factor[model.lon] = modeling_functions.inverse_order_of_magnitude(lon_max)
 
@@ -229,7 +237,7 @@ def main():
 
             print_file = 'facility_output' + str(num_facilities) + '_' + str(run) + '.csv'
             newval = pyo.value(objective_f(model))
-            finalprint = print_functions.print_final(print_array, newval, model, num_facilities, num_sites, site_coordinates, flow_rate_data, sites_flag, print_file)
+            finalprint = print_functions.print_final(print_array, newval, model, num_facilities, num_sites, site_coordinates, flow_rate_data, sites_flag, is_hybrid, print_file)
 
 
 if __name__ == "__main__":

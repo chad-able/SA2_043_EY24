@@ -61,9 +61,10 @@ def treatment_capex_central(total_flow_rate, **params):
 
 def treatment_capex_central_scaled(total_flow_rate, **params):
     # attempts to scale costs vs. base capacity, simple exponential curve, returns $
+    eps = 1e-6  # to ensure that power function is never 0
 
     initial_cost = treatment_capex_central(total_flow_rate, **params)
-    scaled_cost = initial_cost*((total_flow_rate*60*24/42)/params['base_central_capacity'])**params['central_cap_scale_exp']
+    scaled_cost = initial_cost*(((total_flow_rate+eps)*60*24/42)/params['base_central_capacity'])**params['central_cap_scale_exp']
     return scaled_cost
 
 def treatment_capex_modular(total_flow_rate, **params):
@@ -77,10 +78,10 @@ def treatment_opex_central(total_flow_rate, **params):
 
 def treatment_opex_central_scaled(total_flow_rate, **params):
     # attempts to scale costs vs. base capacity, simple exponential curve, returns $/year
-
+    eps = 1e-6  # to ensure that power function is never 0
 
     initial_cost = treatment_opex_central(total_flow_rate, **params)
-    scaled_cost = initial_cost*((total_flow_rate*60*24/42)/params['base_central_capacity'])**params['central_op_scale_exp']
+    scaled_cost = initial_cost*(((total_flow_rate+eps)*60*24/42)/params['base_central_capacity'])**params['central_op_scale_exp']
     return scaled_cost
 
 def treatment_capex_solids(total_solids, **params):
@@ -89,9 +90,9 @@ def treatment_capex_solids(total_solids, **params):
 
 def treatment_capex_solids_scaled(total_solids, **params):
     # attempts to scale costs vs. base capacity, simple exponential curve, returns $
-
+    eps = 1e-6  # to ensure that power function is never 0
     initial_cost = treatment_capex_solids(total_solids, **params)
-    scaled_cost = initial_cost*((total_solids*60*24/1000000000)/params['base_solids_capacity'])**params['solids_cap_scale_exp']
+    scaled_cost = initial_cost*(((total_solids+eps)*60*24/1000000000)/params['base_solids_capacity'])**params['solids_cap_scale_exp']
     return scaled_cost
 
 def treatment_opex_solids(total_solids, **params):
@@ -100,10 +101,10 @@ def treatment_opex_solids(total_solids, **params):
 
 def treatment_opex_solids_scaled(total_solids, **params):
     # attempts to scale costs vs. base capacity, simple exponential curve, returns $/year
-
+    eps = 1e-6  # to ensure that power function is never 0
 
     initial_cost = treatment_opex_solids(total_solids, **params)
-    scaled_cost = initial_cost*((total_solids*60*24/1000000000)/params['base_solids_capacity'])**params['solids_op_scale_exp']
+    scaled_cost = initial_cost*(((total_solids+eps)*60*24/1000000000)/params['base_solids_capacity'])**params['solids_op_scale_exp']
     return scaled_cost
 
 def treatment_opex_modular(total_flow_rate, **params):
@@ -167,13 +168,20 @@ def cost_sites_solids(lat, lon, model, index, num_sites, site_coordinates, flow_
 
     return capex, opex, trans_cost, total_flow_rate
 
-def total_cost_modular(num_sites, flow_rate_data, model,  **params):
+def total_cost_modular(num_sites, flow_rate_data, model, is_hybrid, **params):
     total_cap = 0
     total_op = 0
     cost_params = params['costing']
-    for j in range(num_sites):
-        total_cap += treatment_capex_modular(flow_rate_data[j][0], **cost_params)
-        total_op += treatment_opex_modular(flow_rate_data[j][0], **cost_params)
+    if is_hybrid:
+        for j in range(num_sites):
+            y_ij = model.y[j]
+            flow = (1 - y_ij) * flow_rate_data[j][0]
+            total_cap += treatment_capex_modular(flow, **cost_params)
+            total_op += treatment_opex_modular(flow, **cost_params)
+    else:
+        for j in range(num_sites):
+            total_cap += treatment_capex_modular(flow_rate_data[j][0], **cost_params)
+            total_op += treatment_opex_modular(flow_rate_data[j][0], **cost_params)
 
     return total_cap, total_op
 
@@ -227,12 +235,19 @@ def facility_obj(model, num_sites, num_facilities, site_coordinates, flow_rate_d
     total_truck = 0
     total_flow = 0
     if is_hybrid:
+        cap_modular, op_modular = total_cost_modular(num_sites, flow_rate_data, model, is_hybrid, **params)
+        total_cap += cap_modular
+        total_op += op_modular
         for i in range(num_facilities):
-            liq_cap, liq_op, liq_truck, liq_flow = cost_single_facility_any_central(model.lat[i],model.lon[i], model, i, num_sites, site_coordinates, flow_rate_data, h_approx, is_hybrid, **params)
-            sol_cap, sol_op, sol_truck, sol_flow = cost_sites_solids(model.lat[i],model.lon[i], model, i, num_sites, site_coordinates, flow_rate_data, h_approx, is_hybrid, **params)
+            liq_cap, liq_op, liq_truck, liq_flow = cost_single_facility_any_central(model.lat_c[i],model.lon_c[i], model, i, num_sites, site_coordinates, flow_rate_data, h_approx, is_hybrid, **params)
+            sol_cap, sol_op, sol_truck, sol_flow = cost_sites_solids(model.lat_s[i],model.lon_s[i], model, i, num_sites, site_coordinates, flow_rate_data, h_approx, is_hybrid, **params)
+            total_cap += liq_cap + sol_cap
+            total_op += liq_op + sol_op
+            total_truck += liq_truck + sol_truck
+            total_flow += liq_flow + sol_flow
     else:
         if mod_flag:
-            cap_modular, op_modular = total_cost_modular(num_sites, flow_rate_data, **params)
+            cap_modular, op_modular = total_cost_modular(num_sites, flow_rate_data, model, is_hybrid, **params)
             total_cap += cap_modular
             total_op += op_modular
             for i in range(num_facilities):
