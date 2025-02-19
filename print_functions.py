@@ -21,6 +21,19 @@ def print_initial(initial_cost, model, num_facilities, num_sites, site_coordinat
             print_array.append(col)
             print(f"Initial central lat[{i}] = {model.lat_c[i].value}, lon[{i}] = {model.lon_c[i].value}")
             print(f"Initial solids lat[{i}] = {model.lat_s[i].value}, lon[{i}] = {model.lon_s[i].value}")
+            for j in range(num_sites):
+                if model.y[j].value == 0:
+                    if model.x[i, j].value == 1:
+                        col = []
+                        col.append(f"Draws from site {j} with flow rate {flow_rate_data[j][0]}")
+                        print_array.append(col)
+                        print(f"  Draws from site {j} with flow rate {flow_rate_data[j][0]}")
+                else:
+                    if model.z[i, j].value == 1:
+                        col = []
+                        col.append(f"Modular treatment for site {j} with flow rate {flow_rate_data[j][0]}")
+                        print_array.append(col)
+                        print(f"  Modular treatment for site {j} with flow rate {flow_rate_data[j][0]}")
     else:
         if not sites_flag:
             for i in range(num_facilities):
@@ -47,7 +60,7 @@ def print_initial(initial_cost, model, num_facilities, num_sites, site_coordinat
 
     return print_array
 
-def print_final(print_array, final_cost, model, num_facilities, num_sites, site_coordinates, flow_rate_data, sites_flag, is_hybrid, filename):
+def print_final(timestr, print_array, final_cost, model, num_facilities, num_sites, site_coordinates, flow_rate_data, sites_flag, is_hybrid, filename):
     print_array.append("")
     print(f"Final value for annualized cost is {final_cost} $/bbl")
     col = []
@@ -105,6 +118,9 @@ def print_final(print_array, final_cost, model, num_facilities, num_sites, site_
                         print_array.append(col)
                         print(f"Facility {i} is assigned to Site {j}")
 
+    col = []
+    col.append(timestr)
+    print_array.append(col)
     with open(filename, 'w', newline='') as file:
         writer = csv.writer(file)
         for i in range(len(print_array)):

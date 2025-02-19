@@ -18,12 +18,14 @@ from functools import partial
 import csv
 import print_functions
 import re
+from time import time
 
 
 
 def main():
+    allstart = time()
     facility_array = [2]
-    attempts_per = 1
+    attempts_per = 10
     random_seed_use = False
     random_seed = 43424267667
 
@@ -137,6 +139,7 @@ def main():
         sites_flag = False
         mod_flag = False
         is_hybrid = True
+        best_val = 1000000
         for run in range(attempts_per):
             if not sites_flag:
                 model = init_functions.model_init_any_location(lat_min, lat_max, lon_min, lon_max, num_facilities, num_sites, is_hybrid)
@@ -184,7 +187,7 @@ def main():
             }
 
             solver = modeling_functions.solver(selected_solver, executable_paths[selected_solver])
-
+            model.display()
 
             if selected_solver == 'couenne':
                 couenne_dict = {
@@ -237,7 +240,16 @@ def main():
 
             print_file = 'facility_output' + str(num_facilities) + '_' + str(run) + '.csv'
             newval = pyo.value(objective_f(model))
-            finalprint = print_functions.print_final(print_array, newval, model, num_facilities, num_sites, site_coordinates, flow_rate_data, sites_flag, is_hybrid, print_file)
+            timestr = 'Total time: {}s'.format(round(time() - allstart), 3)
+            print_debug = print_functions.print_final(timestr, print_array, newval, model, num_facilities, num_sites, site_coordinates, flow_rate_data, sites_flag, is_hybrid, print_file)
+            if newval < best_val:
+                best_val = newval
+                model_save = model
+                print_save = print_array
+                best_file = 'facility_output' + str(num_facilities) + '_' + str(run) + 'best' + '.csv'
+
+        timestr = 'Total time: {}s'.format(round(time()-allstart),3)
+        finalprint = print_functions.print_final(timestr, print_save, best_val, model_save, num_facilities, num_sites, site_coordinates, flow_rate_data, sites_flag, is_hybrid, best_file)
 
 
 if __name__ == "__main__":

@@ -43,10 +43,34 @@ def initialize_x(model, i, j, num_facilities, num_sites, is_hybrid):
     # Ensure at most one facility is assigned to each site
     # Pre-compute assignments for each site
     if is_hybrid:
-        if hasattr(model, 'y_assignments') and model.y_assignments[j] == 1:
-            return 0
         if not hasattr(model, 'x_assignments'):
+            model.x_assignments = {}
+            for j in range(num_sites):
+                if model.y_assignments[j] == 0:
+                    model.x_assignments[j] = random.randint(0, num_facilities - 1)
+                else:
+                    model.x_assignments[j] = None
+        return 1 if model.x_assignments[j] == i else 0
+    else:
+        if not hasattr(model, 'x_assignments'):
+            # Randomly assign one facility to each site
             model.x_assignments = {j: random.randint(0, num_facilities - 1) for j in range(num_sites)}
+
+    # Assign 1 to the selected facility, 0 to others
+    return 1 if model.x_assignments[j] == i else 0
+
+def initialize_x_debug(model, i, j, num_facilities, num_sites, is_hybrid):
+    # Ensure at most one facility is assigned to each site
+    # Pre-compute assignments for each site
+    if is_hybrid:
+        if not hasattr(model, 'x_assignments'):
+            model.x_assignments = {}
+            for j in range(num_sites):
+                if model.y_assignments[j] == 0:
+                    model.x_assignments[j] = random.randint(0, num_facilities - 1)
+                else:
+                    model.x_assignments[j] = None
+        return 1 if model.x_assignments[j] == i else 0
     else:
         if not hasattr(model, 'x_assignments'):
             # Randomly assign one facility to each site
@@ -74,14 +98,15 @@ def initialize_z(model, i, j, num_facilities, num_sites, is_hybrid):
                     model.z_assignments[j] = random.randint(0, num_facilities - 1)
                 else:
                     model.z_assignments[j] = None
+        return 1 if model.z_assignments[j] == i else 0
 
     else:
         if not hasattr(model, 'z_assignments'):
             # Randomly assign each facility to a site
             model.z_assignments = {i: random.randint(0, num_sites - 1) for i in range(num_facilities)}
 
-    # Assign 1 to the selected site, 0 to others
-    return 1 if model.z_assignments[i] == j else 0
+        # Assign 1 to the selected site, 0 to others
+        return 1 if model.z_assignments[i] == j else 0
 
 def logistic(x, n):
     log = x**n/(1+x**n)

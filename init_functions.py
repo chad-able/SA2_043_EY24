@@ -318,12 +318,13 @@ def model_init_any_location(lat_min, lat_max, lon_min, lon_max, num_facilities, 
         return sum(model.x[i, j] for i in range(num_facilities) for j in range(num_sites)) >= num_sites
 
     # for centralized facilities (solids or liquids)
-    model.x = pyo.Var(range(num_facilities), range(num_sites), domain=pyo.Binary, initialize=init_x_wrapper)
+
     if is_hybrid:
         # for deciding centralized or modular)
         model.y = pyo.Var(range(num_sites), domain=pyo.Binary, initialize=init_y_wrapper)
+        model.x = pyo.Var(range(num_facilities), range(num_sites), domain=pyo.Binary, initialize=init_x_wrapper)
         # second facility class (functionally identical to x)
-        model.z = pyo.Var(range(num_facilities), range(num_sites), domain=pyo.Binary, initialize=init_x_wrapper)
+        model.z = pyo.Var(range(num_facilities), range(num_sites), domain=pyo.Binary, initialize=init_z_wrapper)
         model.lat_c = pyo.Var(range(num_facilities), domain=pyo.Reals, bounds=(lat_min, lat_max),
                             initialize=random_lat_init)
         model.lon_c = pyo.Var(range(num_facilities), domain=pyo.Reals, bounds=(lon_min, lon_max),
@@ -333,6 +334,7 @@ def model_init_any_location(lat_min, lat_max, lon_min, lon_max, num_facilities, 
         model.lon_s = pyo.Var(range(num_facilities), domain=pyo.Reals, bounds=(lon_min, lon_max),
                             initialize=random_lon_init)
     else:
+        model.x = pyo.Var(range(num_facilities), range(num_sites), domain=pyo.Binary, initialize=init_x_wrapper)
         model.lat = pyo.Var(range(num_facilities), domain=pyo.Reals, bounds=(lat_min, lat_max), initialize=random_lat_init)
         model.lon = pyo.Var(range(num_facilities), domain=pyo.Reals, bounds=(lon_min, lon_max), initialize=random_lon_init)
 

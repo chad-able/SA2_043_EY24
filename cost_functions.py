@@ -175,7 +175,7 @@ def total_cost_modular(num_sites, flow_rate_data, model, is_hybrid, **params):
     if is_hybrid:
         for j in range(num_sites):
             y_ij = model.y[j]
-            flow = (1 - y_ij) * flow_rate_data[j][0]
+            flow = y_ij * flow_rate_data[j][0]
             total_cap += treatment_capex_modular(flow, **cost_params)
             total_op += treatment_opex_modular(flow, **cost_params)
     else:
