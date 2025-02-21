@@ -3,7 +3,7 @@ import cost_functions
 import folium
 from folium.plugins import MarkerCluster
 
-def print_initial(initial_cost, model, num_facilities, num_sites, site_coordinates, sites_flag):
+def print_initial(initial_cost, model, num_facilities, num_sites, site_coordinates, flow_rate_data, sites_flag, is_hybrid):
     print_array = []
 
     print(f"Initial value for annualized cost: {initial_cost} $/bbl")
@@ -11,65 +11,116 @@ def print_initial(initial_cost, model, num_facilities, num_sites, site_coordinat
     col.append(f"Initial value for annualized cost: {initial_cost} $/bbl")
     print_array.append(col)
 
-    if not sites_flag:
+    if is_hybrid:
         for i in range(num_facilities):
             col = []
-            col.append(f"Facility {i}:")
-            col.append(f"Location ({model.lat[i].value}, {model.lon[i].value})")
+            col.append(f"Central Facility {i}:")
+            col.append(f"Location ({model.lat_c[i].value}, {model.lon_c[i].value})")
+            col.append(f"Solids Facility {i}:")
+            col.append(f"Location ({model.lat_s[i].value}, {model.lon_s[i].value})")
             print_array.append(col)
-            print(f"Initial lat[{i}] = {model.lat[i].value}, lon[{i}] = {model.lon[i].value}")
-
-    else:
-        for i in range(num_facilities):
-            lat, lon = cost_functions.facility_coordinates_vals(model, i, site_coordinates, num_sites)
-            col = []
-            col.append(f"Facility {i}:")
-            col.append(f"Location ({lat}, {lon})")
-            print_array.append(col)
-            print(f"Initial lat[{i}] = {lat}, lon[{i}] = {lon}")
+            print(f"Initial central lat[{i}] = {model.lat_c[i].value}, lon[{i}] = {model.lon_c[i].value}")
+            print(f"Initial solids lat[{i}] = {model.lat_s[i].value}, lon[{i}] = {model.lon_s[i].value}")
             for j in range(num_sites):
-                if model.z[i, j].value == 1:
-                    col = []
-                    col.append(f"Facility {i} is initially assigned to Site {j}")
-                    print_array.append(col)
-                    print(f"Facility {i} is assigned to Site {j}")
+                if model.y[j].value == 0:
+                    if model.x[i, j].value == 1:
+                        col = []
+                        col.append(f"Draws from site {j} with flow rate {flow_rate_data[j][0]}")
+                        print_array.append(col)
+                        print(f"  Draws from site {j} with flow rate {flow_rate_data[j][0]}")
+                else:
+                    if model.z[i, j].value == 1:
+                        col = []
+                        col.append(f"Modular treatment for site {j} with flow rate {flow_rate_data[j][0]}")
+                        print_array.append(col)
+                        print(f"  Modular treatment for site {j} with flow rate {flow_rate_data[j][0]}")
+    else:
+        if not sites_flag:
+            for i in range(num_facilities):
+                col = []
+                col.append(f"Facility {i}:")
+                col.append(f"Location ({model.lat[i].value}, {model.lon[i].value})")
+                print_array.append(col)
+                print(f"Initial lat[{i}] = {model.lat[i].value}, lon[{i}] = {model.lon[i].value}")
+
+        else:
+            for i in range(num_facilities):
+                lat, lon = cost_functions.facility_coordinates_vals(model, i, site_coordinates, num_sites)
+                col = []
+                col.append(f"Facility {i}:")
+                col.append(f"Location ({lat}, {lon})")
+                print_array.append(col)
+                print(f"Initial lat[{i}] = {lat}, lon[{i}] = {lon}")
+                for j in range(num_sites):
+                    if model.z[i, j].value == 1:
+                        col = []
+                        col.append(f"Facility {i} is initially assigned to Site {j}")
+                        print_array.append(col)
+                        print(f"Facility {i} is assigned to Site {j}")
 
     return print_array
 
-def print_final(print_array, final_cost, model, num_facilities, num_sites, site_coordinates, flow_rate_data, sites_flag, filename):
+def print_final(timestr, print_array, final_cost, model, num_facilities, num_sites, site_coordinates, flow_rate_data, sites_flag, is_hybrid, filename):
     print_array.append("")
     print(f"Final value for annualized cost is {final_cost} $/bbl")
     col = []
     col.append(f"Final value for annualized cost is {final_cost} $/bbl")
     print_array.append(col)
 
-    for i in range(num_facilities):
-        if not sites_flag:
+    if is_hybrid:
+        for i in range(num_facilities):
             col = []
-            col.append(f"Facility {i}:")
-            col.append(f"Location ({model.lat[i].value}, {model.lon[i].value})")
+            col.append(f"Central Facility {i}:")
+            col.append(f"Location ({model.lat_c[i].value}, {model.lon_c[i].value})")
+            col.append(f"Solids Facility {i}:")
+            col.append(f"Location ({model.lat_s[i].value}, {model.lon_s[i].value})")
             print_array.append(col)
-            print(f"Facility {i}: Location ({model.lat[i].value}, {model.lon[i].value})")
-        else:
-            lat, lon = cost_functions.facility_coordinates_vals(model, i, site_coordinates, num_sites)
-            col = []
-            col.append(f"Facility {i}:")
-            col.append(f"Location ({lat}, {lon})")
-            print_array.append(col)
-            print(f"Facility {i}: Location ({lat}, {lon})")
-        for j in range(num_sites):
-            if model.x[i, j].value == 1:
+            print(f"Central lat[{i}] = {model.lat_c[i].value}, lon[{i}] = {model.lon_c[i].value}")
+            print(f"Solids lat[{i}] = {model.lat_s[i].value}, lon[{i}] = {model.lon_s[i].value}")
+            for j in range(num_sites):
+                if model.y[j].value == 0:
+                    if model.x[i, j].value == 1:
+                        col = []
+                        col.append(f"Draws from site {j} with flow rate {flow_rate_data[j][0]}")
+                        print_array.append(col)
+                        print(f"  Draws from site {j} with flow rate {flow_rate_data[j][0]}")
+                else:
+                    if model.z[i, j].value == 1:
+                        col = []
+                        col.append(f"Modular treatment for site {j} with flow rate {flow_rate_data[j][0]}")
+                        print_array.append(col)
+                        print(f"  Modular treatment for site {j} with flow rate {flow_rate_data[j][0]}")
+    else:
+        for i in range(num_facilities):
+            if not sites_flag:
                 col = []
-                col.append(f"Draws from site {j} with flow rate {flow_rate_data[j][0]}")
+                col.append(f"Facility {i}:")
+                col.append(f"Location ({model.lat[i].value}, {model.lon[i].value})")
                 print_array.append(col)
-                print(f"  Draws from site {j} with flow rate {flow_rate_data[j][0]}")
-            if sites_flag:
-                if model.z[i, j].value == 1:
+                print(f"Facility {i}: Location ({model.lat[i].value}, {model.lon[i].value})")
+            else:
+                lat, lon = cost_functions.facility_coordinates_vals(model, i, site_coordinates, num_sites)
+                col = []
+                col.append(f"Facility {i}:")
+                col.append(f"Location ({lat}, {lon})")
+                print_array.append(col)
+                print(f"Facility {i}: Location ({lat}, {lon})")
+            for j in range(num_sites):
+                if model.x[i, j].value == 1:
                     col = []
-                    col.append(f"Facility {i} is assigned to Site {j}")
+                    col.append(f"Draws from site {j} with flow rate {flow_rate_data[j][0]}")
                     print_array.append(col)
-                    print(f"Facility {i} is assigned to Site {j}")
+                    print(f"  Draws from site {j} with flow rate {flow_rate_data[j][0]}")
+                if sites_flag:
+                    if model.z[i, j].value == 1:
+                        col = []
+                        col.append(f"Facility {i} is assigned to Site {j}")
+                        print_array.append(col)
+                        print(f"Facility {i} is assigned to Site {j}")
 
+    col = []
+    col.append(timestr)
+    print_array.append(col)
     with open(filename, 'w', newline='') as file:
         writer = csv.writer(file)
         for i in range(len(print_array)):

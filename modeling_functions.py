@@ -39,25 +39,62 @@ def log_pyomo_infeasible_constraints(model_instance):
                          log_variables=True, logger=logging_logger)
 
 
-def initialize_x(model, i, j, num_facilities, num_sites):
+def initialize_x(model, i, j, num_facilities, num_sites, is_hybrid):
     # Ensure at most one facility is assigned to each site
     # Pre-compute assignments for each site
-    if not hasattr(model, 'x_assignments'):
-        # Randomly assign one facility to each site
-        model.x_assignments = {j: random.randint(0, num_facilities - 1) for j in range(num_sites)}
+    if is_hybrid:
+        if not hasattr(model, 'x_assignments'):
+            model.x_assignments = {}
+            for j in range(num_sites):
+                if model.y_assignments[j] == 0:
+                    model.x_assignments[j] = random.randint(0, num_facilities - 1)
+                else:
+                    model.x_assignments[j] = None
+        return 1 if model.x_assignments[j] == i else 0
+    else:
+        if not hasattr(model, 'x_assignments'):
+            # Randomly assign one facility to each site
+            model.x_assignments = {j: random.randint(0, num_facilities - 1) for j in range(num_sites)}
 
     # Assign 1 to the selected facility, 0 to others
     return 1 if model.x_assignments[j] == i else 0
 
-def initialize_z(model, i, j, num_facilities, num_sites):
 
 
-    if not hasattr(model, 'z_assignments'):
-        # Randomly assign each facility to a site
-        model.z_assignments = {i: random.randint(0, num_sites - 1) for i in range(num_facilities)}
+def initialize_y(model, j, num_sites):
+    # Precompute assignments only once and store them as an attribute of the model.
+    if not hasattr(model, 'y_assignments'):
+        # For each site j, randomly choose between 0 (centralized) and 1 (on-site)
+        model.y_assignments = {j: random.choice([0, 1]) for j in range(num_sites)}
+    return model.y_assignments[j]
 
-    # Assign 1 to the selected site, 0 to others
-    return 1 if model.z_assignments[i] == j else 0
+def initialize_y_debug(model, j, num_sites):
+    # Precompute assignments only once and store them as an attribute of the model.
+    if not hasattr(model, 'y_assignments'):
+        # For each site j, randomly choose between 0 (centralized) and 1 (on-site)
+        model.y_assignments = {j: 1 for j in range(num_sites)}
+    return model.y_assignments[j]
+def initialize_z(model, i, j, num_facilities, num_sites, is_hybrid):
+
+    if is_hybrid:
+        if not hasattr(model, 'z_assignments'):
+            # For each site that uses on-site treatment, randomly choose a solids facility.
+            model.z_assignments = {}
+            for j in range(num_sites):
+                # Only assign if the precomputed y for this site is 1 (on-site)
+                if model.y_assignments[j] == 1:
+                    model.z_assignments[j] = random.randint(0, num_facilities - 1)
+                else:
+                    model.z_assignments[j] = None
+        return 1 if model.z_assignments[j] == i else 0
+
+    else:
+        if not hasattr(model, 'z_assignments'):
+            # Randomly assign each facility to a site
+            model.z_assignments = {i: random.randint(0, num_sites - 1) for i in range(num_facilities)}
+
+        # Assign 1 to the selected site, 0 to others
+        return 1 if model.z_assignments[i] == j else 0
 
 def logistic(x, n):
     log = x**n/(1+x**n)
