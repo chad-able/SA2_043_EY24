@@ -88,20 +88,20 @@ def main():
     # if sites_flag = True, use only sites as locations
     # Otherwise, use any valid location
 
+    alt_trucking_params = {
+        'use_pareto': False,
+        'truck_variable_cost': 0.10 # $/bbl/mile, from https://doi.org/10.2118/157532-MS (range from 0.02 to 0.40, from 2012)
+        # other sources for trucking cost include doi:10.1002/aic.14705, https://www.osti.gov/servlets/purl/1533719
+    }
 
     trucking_params = {
-        'use_pareto': True,
         'truck_capacity_liq': 110, # in barrels, from Pareto (p_delta_Truck in strategic_produced_water_optimization, 110 from build_utils)
         'truck_hourly_rate': 95, # $/hr, from Pareto, rates vary from 90 to 110 (strategic_toy_case_study, tab TruckingHourlyCost)
         'truck_driving_speed': 60, # mph
         'truck_loading_time': 6 # assume 6 hour minimum trucking time for loading/unloading, include travel time
     }
 
-    alt_trucking_params = {
-        'use_pareto': False,
-        'truck_variable_cost': 0.10 # $/bbl/mile, from https://doi.org/10.2118/157532-MS (range from 0.02 to 0.40, from 2012)
-        # other sources for trucking cost include doi:10.1002/aic.14705, https://www.osti.gov/servlets/purl/1533719
-    }
+
 
     costing_params = {
         'central_cap_cost_init': 1000,  # $/bbl/day, assumed 1000 $/bbl/day from PARETO's treatment technology matrix
@@ -191,21 +191,23 @@ def main():
 
             if selected_solver == 'couenne':
                 couenne_dict = {
-                    'max_cpu_time': 600,
-                    'max_iter': 100000,
+                    'acceptable_tol': 1e-3,
+                    'max_cpu_time': 1800,
+                    'max_iter': 10000,
                     'tol': 1e-2,
-                    'bonmin.time_limit': 100,
+                    'bonmin.time_limit': 1000,
                     'bonmin.node_limit': 10000,
-                    'bonmin.resolve_on_small_infeasibility': 1,
-                    'bonmin.cutoff': 10,
+                    'bonmin.resolve_on_small_infeasibility': 3,
+                    'bonmin.cutoff': testval,
                     'art_lower': 0,
-                    'art_cutoff': 10,
-                    'log_num_obbt_per_level': 10,
+                    'art_cutoff': testval,
+                    'log_num_obbt_per_level': 20,
+                    'log_num_local_optimization_per_level': 10,
                     'feas_tolerance': 1e-3,
                     'bonmin.algorithm': "B-OA",
                     'bonmin.node_comparison': "dynamic",
                     'bonmin.integer_tolerance': 1e-3,
-                    'bonmin.num_retry_unsolved_random_point': 5,
+                    'bonmin.num_retry_unsolved_random_point': 10,
                     'bonmin.acceptable_tol': 1e-3
                 }
 

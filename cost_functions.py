@@ -1,6 +1,7 @@
 import numpy as np
 from distance_functions import haversine, linear_distance, euclidean_distance
 import modeling_functions
+import pyomo.environ as pyo
 # TODO
 # separate cost functions for specific shale play (may require separate files)
 # Modular + centralized, solids and liquid transport
@@ -236,11 +237,21 @@ def facility_obj(model, num_sites, num_facilities, site_coordinates, flow_rate_d
     total_flow = 0
     if is_hybrid:
         cap_modular, op_modular = total_cost_modular(num_sites, flow_rate_data, model, is_hybrid, **params)
+        print('cap_modular is', pyo.value(cap_modular))
+        print('op_modular is', pyo.value(op_modular))
         total_cap += cap_modular
         total_op += op_modular
         for i in range(num_facilities):
             liq_cap, liq_op, liq_truck, liq_flow = cost_single_facility_any_central(model.lat_c[i],model.lon_c[i], model, i, num_sites, site_coordinates, flow_rate_data, h_approx, is_hybrid, **params)
+            print(pyo.value(liq_cap))
+            print(pyo.value(liq_op))
+            print(pyo.value(liq_truck))
+            print(pyo.value(liq_flow))
             sol_cap, sol_op, sol_truck, sol_flow = cost_sites_solids(model.lat_s[i],model.lon_s[i], model, i, num_sites, site_coordinates, flow_rate_data, h_approx, is_hybrid, **params)
+            print(pyo.value(sol_cap))
+            print(pyo.value(sol_op))
+            print(pyo.value(sol_truck))
+            print(pyo.value(sol_flow))
             total_cap += liq_cap + sol_cap
             total_op += liq_op + sol_op
             total_truck += liq_truck + sol_truck

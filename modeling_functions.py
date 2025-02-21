@@ -59,25 +59,7 @@ def initialize_x(model, i, j, num_facilities, num_sites, is_hybrid):
     # Assign 1 to the selected facility, 0 to others
     return 1 if model.x_assignments[j] == i else 0
 
-def initialize_x_debug(model, i, j, num_facilities, num_sites, is_hybrid):
-    # Ensure at most one facility is assigned to each site
-    # Pre-compute assignments for each site
-    if is_hybrid:
-        if not hasattr(model, 'x_assignments'):
-            model.x_assignments = {}
-            for j in range(num_sites):
-                if model.y_assignments[j] == 0:
-                    model.x_assignments[j] = random.randint(0, num_facilities - 1)
-                else:
-                    model.x_assignments[j] = None
-        return 1 if model.x_assignments[j] == i else 0
-    else:
-        if not hasattr(model, 'x_assignments'):
-            # Randomly assign one facility to each site
-            model.x_assignments = {j: random.randint(0, num_facilities - 1) for j in range(num_sites)}
 
-    # Assign 1 to the selected facility, 0 to others
-    return 1 if model.x_assignments[j] == i else 0
 
 def initialize_y(model, j, num_sites):
     # Precompute assignments only once and store them as an attribute of the model.
@@ -86,6 +68,12 @@ def initialize_y(model, j, num_sites):
         model.y_assignments = {j: random.choice([0, 1]) for j in range(num_sites)}
     return model.y_assignments[j]
 
+def initialize_y_debug(model, j, num_sites):
+    # Precompute assignments only once and store them as an attribute of the model.
+    if not hasattr(model, 'y_assignments'):
+        # For each site j, randomly choose between 0 (centralized) and 1 (on-site)
+        model.y_assignments = {j: 1 for j in range(num_sites)}
+    return model.y_assignments[j]
 def initialize_z(model, i, j, num_facilities, num_sites, is_hybrid):
 
     if is_hybrid:

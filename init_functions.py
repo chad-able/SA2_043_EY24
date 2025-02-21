@@ -310,7 +310,7 @@ def model_init_any_location(lat_min, lat_max, lon_min, lon_max, num_facilities, 
         return modeling_functions.initialize_x(model, i, j, num_facilities=num_facilities, num_sites=num_sites, is_hybrid=is_hybrid)
 
     def init_y_wrapper(model, j):
-        return modeling_functions.initialize_y(model, j, num_sites = num_sites)
+        return modeling_functions.initialize_y_debug(model, j, num_sites = num_sites)
 
     def init_z_wrapper(model, i, j):
         return modeling_functions.initialize_z(model, i, j, num_facilities=num_facilities, num_sites=num_sites, is_hybrid=is_hybrid)
@@ -346,8 +346,8 @@ def model_init_any_location(lat_min, lat_max, lon_min, lon_max, num_facilities, 
         else:
             model.assignment_constraint.add(sum(model.x[i, j] for i in range(num_facilities)) == 1)
 
-
-    model.coverage_constraint = pyo.Constraint(rule=coverage_rule)
+    if not is_hybrid:
+        model.coverage_constraint = pyo.Constraint(rule=coverage_rule)
 
     return model
 
